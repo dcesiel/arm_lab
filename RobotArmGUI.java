@@ -1,4 +1,3 @@
-package armlab;
 
 import java.awt.*;
 
@@ -52,15 +51,20 @@ public class RobotArmGUI
     {
         VisChain arm = new VisChain();
 
-        VzBox segBottom = new VzBox(0.5, 0.5, 0.5, new VzMesh.Style(Color.red));
-        arm.add(segBottom);
+        VzBox segBase = new VzBox(.05, 0.04, 0.075, new VzMesh.Style(Color.red));
+        arm.add(segBase);
 
-        VzBox seg1 = new VzBox(0.5, 0.5, 1, new VzMesh.Style(Color.orange));
-        double theta1 = pg.gd("t1") * Math.PI/180;
-        double theta2 = pg.gd("t2") * Math.PI/180;
-        arm.add(LinAlg.rotateZ(theta1),
+        VzBox segPivot1 = new VzBox(.04, 0.04, 0.045, new VzMesh.Style(Color.blue));
+        double pivot1Angle = pg.gd("t1") * Math.PI/180;
+        arm.add(LinAlg.rotateZ(pivot1Angle),
                 /* we rotate about an end instead of the center by first translating it appropriately */
-                LinAlg.translate(0, 0, 0.5), LinAlg.rotateX(theta2), LinAlg.translate(0, 0, 0.5), seg1);
+                LinAlg.translate(0.02, 0, 0.075), segPivot1);
+
+
+        //VzBox seg1 = new VzBox(0.105, 0.5, 1, new VzMesh.Style(Color.orange));
+        //arm.add(LinAlg.rotateZ(theta1),
+                /* we rotate about an end instead of the center by first translating it appropriately */
+         //       LinAlg.translate(0, 0, 0.5), LinAlg.rotateX(theta2), LinAlg.translate(0, 0, 0.5), seg1);
 
         /* build a gripper by chaining fingers together */
         VzBox fingerShort = new VzBox(0.1, 0.1, 0.8, new VzMesh.Style(Color.darkGray));
