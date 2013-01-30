@@ -2,3 +2,40 @@ arm_lab
 =======
 
 EECS 498 arm lab
+
+
+Arm Dimensions:
+Base:
+  x: 5cm
+  y: 7.5cm
+  z: 4cm
+
+Pivot1:
+  x: 4cm
+  y: 4.5cm
+  z: 4cm
+
+Length1:
+  x: 4cm
+  y: 10.5cm
+  z: 4.5cm
+
+Length2:
+  x: 3.5cm
+  y: 10cm
+  z: 4.5cm
+
+Length3:
+  x: 3.5cm
+  y: 8cm
+  z: 6.5cm
+
+Pivot2:
+  x: 5cm
+  y: 2cm
+  z: 5.5cm
+
+Claw (opens and closes in the negative x direction):
+  x: 12cm
+  y: 8.5cm
+  z: 5.5cm
