@@ -23,7 +23,7 @@ public class BallMatch
         is = _is;
 
         // Determine which slider values we want
-        pg.addIntSlider("kthresh","Brightness Threshold",0,255,DEFAULT_GRAY_THRESHOLD);
+        pg.addDoubleSlider("kthresh","Brightness Threshold",0,255,error);
 
         jim.setFit(true);
 
@@ -71,13 +71,13 @@ public class BallMatch
             // draw the horizontal lines
             for (int y : new int[]{bounds[1], bounds[3]})
                 for (int x = bounds[0]; x <=bounds[2]; x++) {
-                    im.setRGB(x,y, 0xff0000ff); //Go Blue!
+                    img.setRGB(x,y, 0xff0000ff); //Go Blue!
                 }
 
             // draw the horizontal lines
             for (int x : new int[]{bounds[0], bounds[2]})
                 for (int y = bounds[1]; y <=bounds[3]; y++) {
-                    im.setRGB(x,y, 0xff0000ff); //Go Blue!
+                    img.setRGB(x,y, 0xff0000ff); //Go Blue!
                 }
 
         }
