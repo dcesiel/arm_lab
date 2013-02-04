@@ -4,16 +4,23 @@ import java.awt.*;
 import java.awt.image.*;
 import javax.swing.*;
 import java.lang.*;
+import java.awt.event.*;
 
 import april.jcam.*;
 import april.util.*;
 import april.jmat.*;
 
-public class BallMatch
+public class BallMatch extends MouseAdapter
 {
   static double errorK = 0;
   static double error = 0;
   ImageSource is;
+
+  boolean templateCurrent;
+  BufferedImage template;
+
+  boolean click2, getTemplate;
+  int X1, X2, Y1, Y2; 
 
   JFrame jf = new JFrame("LED Tracker Demo");
   JImage jim = new JImage();
@@ -32,7 +39,7 @@ public class BallMatch
 
     // Setup window layout
     jf.setLayout(new BorderLayout());
-    jf.add(jim, BorderLayout.CENTER);
+    jf.add(jim, BorderLayout.CENTER); 
     jf.add(pg, BorderLayout.SOUTH);
     jf.setSize(1024, 768);
     jf.setVisible(true);
@@ -61,10 +68,31 @@ public class BallMatch
             if (error < errorK){
               int [] bounds = {x, y, (x+template.getWidth()), (y+template.getHeight())};
               markBall(img, bounds);
-            }
+            }  
           }
         }
       }
+    }
+  }
+
+  @Override
+    public void mouseClicked(MouseEvent me) {
+      if(getTemplate){
+        int screenX = me.getXOnScreen();
+        int screenY = me.getYOnScreen();
+
+        if(! click2){
+            X1 = screenX;
+            Y1 = screenY;
+            System.out.println("First Time screen(X,Y) = " + screenX + "," + screenY);
+            click2 = true;
+        }
+        if(click2){
+            X2 = screenX;
+            Y2 = screenY;
+            System.out.println("First Time screen(X,Y) = " + screenX + "," + screenY);
+            getTemplate = false;
+        }
     }
   }
 
@@ -74,9 +102,6 @@ public class BallMatch
     ImageSourceFormat fmt = is.getCurrentFormat();
 
     // Initialize visualization environment now that we know the image dimensions
-
-
-    BufferedImage template = null;
 
     while(true) {
       // read a frame
@@ -89,13 +114,19 @@ public class BallMatch
 
 
       //If button has been clicked get a new template
-      boolean button = false; //pg.gb("getTemplateButton");
-      //System.out.println("Button: " + button);
+      pg.addListener(new ParameterListener() {
+          public void paramaterChanged(ParameterGUI pg, String name)
+          {
+              if (name.equals("getTemplateButton")){
+                getTemplate = true;
+                click2 = false;
+                while(getTemplate){} 
+                templateCurrent = false;
+              }
+          }
+      });
 
-      if(button){
-        int [] templateBounds = getClick();
-        template = setTemplate(im, templateBounds);
-      }
+      template = setTemplate(im);
 
       matchBall(im, template, pg);
 
@@ -106,18 +137,14 @@ public class BallMatch
         }
       }
       int [] bounds = {0, 0, template.getWidth(), template.getHeight()};
-      markBall(im, bounds);  
-           
+      markBall(im, bounds);
+
       //display image
       jim.setImage(im);
     }
   }
 
-  public int[] getClick(){
-    return null;
-  }
-
-  public BufferedImage setTemplate(BufferedImage img, int[] bounds){
+  public BufferedImage setTemplate(BufferedImage img){
     return null;
   }
 
@@ -162,4 +189,6 @@ public class BallMatch
     ImageSource is = ImageSource.make(url);
     new BallMatch(is).run();
   }
+
+  
 }
