@@ -67,23 +67,26 @@ public class RobotArmGUI implements LCMSubscriber
     {
         VisChain arm = new VisChain();
 
-        //VzBox segBottom = new VzBox(0.5, 0.5, 0.5, new VzMesh.Style(Color.red));
-        //arm.add(segBottom);
         VzBox segBottom = new VzBox(0.5, 0.4, 0.75, new VzMesh.Style(Color.red));
         arm.add(segBottom);
 
         VzBox seg1 = new VzBox(0.4, 0.4, 0.45, new VzMesh.Style(Color.orange));
         double theta1 = pg.gd("t1") * Math.PI/180;
         
-        //arm.add(LinAlg.rotateZ(theta1),
-        //        /* we rotate about an end instead of the center by first translating it appropriately */
-        //        LinAlg.translate(0, 0, 0.5), LinAlg.rotateX(theta2), LinAlg.translate(0, 0, 0.5), seg1);
 	arm.add(LinAlg.translate(0.1, 0, 0.375), LinAlg.rotateZ(theta1),
                 /* we rotate about an end instead of the center by first translating it appropriately */
                 LinAlg.translate(0.1, 0, 0.225), seg1);
 
 	VzBox seg2 = new VzBox(0.4, 0.4, 1.05, new VzMesh.Style(Color.blue));
 	double theta2 = pg.gd("t2") * Math.PI/180;
+
+	if(theta2 > 2.12){
+		theta2 = 2.12;
+	}
+
+	if(theta2 < -2.12){
+		theta2 = -2.12;
+	}
 
 	arm.add(LinAlg.translate(0, 0, 0.225), LinAlg.rotateX(theta2),
                 /* we rotate about an end instead of the center by first translating it appropriately */
@@ -124,7 +127,6 @@ public class RobotArmGUI implements LCMSubscriber
                 LinAlg.translate(+0.15, 0, 0), fingerLong,
                 LinAlg.translate(+0.15, 0, 0), fingerLong );
         double theta6 = pg.gd("t6") * Math.PI/180;
-        //arm.add(LinAlg.translate(0, 0.25, -0.5), LinAlg.rotateX(theta6), LinAlg.translate(0, 0, 0.5), segGripper);
 	arm.add(LinAlg.translate(0, 0.25, -0.5), LinAlg.rotateX(theta6), LinAlg.translate(0, 0, 0.5), segGripper);
 
         VisWorld.Buffer vb = vw.getBuffer("arm");
