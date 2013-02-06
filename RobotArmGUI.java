@@ -95,12 +95,28 @@ public class RobotArmGUI implements LCMSubscriber
 	VzBox seg3 = new VzBox(0.35, 0.45, 1.0, new VzMesh.Style(Color.red));
 	double theta3 = pg.gd("t3") * Math.PI/180;
 
+	if(theta3 > 2.12){
+		theta3 = 2.12;
+	}
+
+	if(theta3 < -2.12){
+		theta3 = -2.12;
+	}
+
 	arm.add(LinAlg.translate(0, 0, 0.525), LinAlg.rotateX(theta3),
                 /* we rotate about an end instead of the center by first translating it appropriately */
                 LinAlg.translate(0, 0, 0.5), seg3);
 
 	VzBox seg4 = new VzBox(0.35, 0.65, 0.8, new VzMesh.Style(Color.orange));
 	double theta4 = pg.gd("t4") * Math.PI/180;
+
+	if(theta4 > 2.12){
+		theta4 = 2.12;
+	}
+
+	if(theta4 < -2.12){
+		theta4 = -2.12;
+	}
 
 	arm.add(LinAlg.translate(0, 0, 0.5), LinAlg.rotateX(theta4),
                 /* we rotate about an end instead of the center by first translating it appropriately */
@@ -127,6 +143,15 @@ public class RobotArmGUI implements LCMSubscriber
                 LinAlg.translate(+0.15, 0, 0), fingerLong,
                 LinAlg.translate(+0.15, 0, 0), fingerLong );
         double theta6 = pg.gd("t6") * Math.PI/180;
+
+	if(theta6 > 0){
+		theta6 = 0;
+	}
+
+	if(theta6 < -.5235){
+		theta6 = -.5235;
+	}
+
 	arm.add(LinAlg.translate(0, 0.25, -0.5), LinAlg.rotateX(theta6), LinAlg.translate(0, 0, 0.5), segGripper);
 
         VisWorld.Buffer vb = vw.getBuffer("arm");
