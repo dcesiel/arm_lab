@@ -94,13 +94,12 @@ public class BallMatch implements MouseListener
     // Returns the bounds of the pixel coordinates of the led: {min_x, min_y, max_x, max_y}
     public void matchBall()
     {
-        for (int y = 0; y < im.getHeight() - template.getHeight(); y++){
-            for (int x = 0; x < im.getWidth() - template.getWidth(); x++){
-                for (int ty = 0; ty < template.getHeight(); ty++) {
-                  for (int tx = 0; tx < template.getWidth(); tx++) {
-                        int templateRGB = template.getRGB(tx, ty);
+        for (int y = 0; y < im.getHeight() - Y2-Y1; y++){
+            for (int x = 0; x < im.getWidth() - X2-X1; x++){
+                for (int ty = 0; ty < Y2 - Y1; ty++) {
+                  for (int tx = 0; tx < X2 - X1; tx++) {
+                        int templateRGB = template.getRGB(X1+ tx, Y1+ ty);
                         int imageRGB = im.getRGB(x + tx, y + ty);
-
                         int templateRed = (templateRGB>>16)&0xff;
                         int imageRed = (imageRGB>>16)&0xff;
                         int templateGreen = (templateRGB>>8)&0xff;
@@ -111,7 +110,7 @@ public class BallMatch implements MouseListener
                                             Math.pow(templateGreen - imageGreen,2) +
                                             Math.pow(templateBlue - imageBlue,2));
                         if (error < errorK){
-                            int [] bounds = {x, y, (x+template.getWidth()), (y+template.getHeight())};
+                            int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
                             markBall(im, bounds);
                         }
                     }
@@ -159,8 +158,7 @@ public class BallMatch implements MouseListener
 
 
             //If button has been clicked get a new template
-
-            //matchBall(im, template, pg);
+            matchBall();
 
             //Place template in the top left corner of the screeen
             for (int ty = 0; ty < Y2-Y1; ty++) {
