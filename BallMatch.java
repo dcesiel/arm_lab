@@ -13,27 +13,27 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class BallMatch implements MouseListener
-{
-    static double errorK = 0;
-    static double error = 0;
+{  
+
+    //Image Globals    
     ImageSource is;
-
-    boolean templateCurrent;
-    BufferedImage template;
-
-    boolean clicked, getTemplate, onScreen;
-    int X1, X2, Y1, Y2;
-
-    JFrame jf = new JFrame();
-
-    JImage jim = new JImage();
-
-    ParameterGUI pg = new ParameterGUI();
-
+    BufferedImage template = null;
     BufferedImage im = null;
 
+    //Template creation globals
+    boolean clicked, getTemplate, onScreen, setTemplate = true, update = true;
+    int X1 = 0, X2 = 1, Y1 = 0, Y2 = 1;
 
+    //Error Bar Variables
+    double error = 0;
+    double errorK = 0;
 
+    //GUI Gloabals
+    JFrame jf = new JFrame();
+    JImage jim = new JImage();
+    ParameterGUI pg = new ParameterGUI();
+
+    
 	public void mouseClicked(MouseEvent e) {}
 
 	public void mouseEntered(MouseEvent e) {
@@ -46,8 +46,8 @@ public class BallMatch implements MouseListener
 
 	public void mousePressed(MouseEvent me) {
              if(getTemplate & onScreen){
-                X1 = me.getXOnScreen();
-                Y1 = me.getYOnScreen();
+                X1 = me.getX();
+                Y1 = me.getY();
                 System.out.println("X: " + X1 + " Y: " + Y1);
                 clicked = true;
             }
@@ -55,11 +55,16 @@ public class BallMatch implements MouseListener
 
 	public void mouseReleased(MouseEvent me) {
             if(getTemplate & onScreen){
-                X2 = me.getXOnScreen();
-                Y2 = me.getYOnScreen();
+                X2 = me.getX();
+                Y2 = me.getY();
                 System.out.println("X: " + X2 + " Y: " + Y2);
                 clicked = false;
                 getTemplate = false;
+                template = im;          
+                int bounds[] = {X1, Y1, X2, Y2};
+                markBall(im, bounds);
+
+                jim.setImage(im);
             }
 	}
 
@@ -70,28 +75,31 @@ public class BallMatch implements MouseListener
         // Determine which slider values we want
         pg.addDoubleSlider("errork","error Threshold",0,100,error);
         pg.addButtons("getTemplateButton", "Grab new template");
-
+    	pg.addButtons("acceptTemplate", "Accept Template");
+        pg.addButtons("calibrate", "Calibrate");
+	    pg.addButtons("start", "Start");
+	   	
         jim.setFit(true);
-
+	
         // Setup window layout
         jf.setLayout(new BorderLayout());
-        jf.add(jim, BorderLayout.CENTER);
+        jf.add(jim, BorderLayout.NORTH);
         jf.add(pg, BorderLayout.SOUTH);
-        jf.setSize(1024, 768);
+        jf.setSize(800, 800);
         jf.setVisible(true);
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jim.addMouseListener(this);
     }
 
     // Returns the bounds of the pixel coordinates of the led: {min_x, min_y, max_x, max_y}
-    public void matchBall(BufferedImage img, BufferedImage template, ParameterGUI pg)
+    public void matchBall()
     {
-        for (int y = 0; y < img.getHeight() - template.getHeight(); y++){
-            for (int x = 0; x < img.getWidth() - template.getWidth(); x++){
+        for (int y = 0; y < im.getHeight() - template.getHeight(); y++){
+            for (int x = 0; x < im.getWidth() - template.getWidth(); x++){
                 for (int ty = 0; ty < template.getHeight(); ty++) {
                   for (int tx = 0; tx < template.getWidth(); tx++) {
                         int templateRGB = template.getRGB(tx, ty);
-                        int imageRGB = img.getRGB(x + tx, y + ty);
+                        int imageRGB = im.getRGB(x + tx, y + ty);
 
                         int templateRed = (templateRGB>>16)&0xff;
                         int imageRed = (imageRGB>>16)&0xff;
@@ -104,7 +112,7 @@ public class BallMatch implements MouseListener
                                             Math.pow(templateBlue - imageBlue,2));
                         if (error < errorK){
                             int [] bounds = {x, y, (x+template.getWidth()), (y+template.getHeight())};
-                            markBall(img, bounds);
+                            markBall(im, bounds);
                         }
                     }
                 }
@@ -114,25 +122,32 @@ public class BallMatch implements MouseListener
 
     public void run(){
         is.start();
-        ImageSourceFormat fmt = is.getCurrentFormat();
+        final ImageSourceFormat fmt = is.getCurrentFormat();
 
         // Initialize visualization environment now that we know the image dimensions
         pg.addListener(new ParameterListener() {
             public void parameterChanged(ParameterGUI pg, String name)
             {
                 if (name.equals("getTemplateButton")){
-                    System.out.println("Button pressed");
                     getTemplate = true;
+                    // read a frame
+                    byte buf[] = is.getFrame().data;
+                    if (buf != null){
+                        im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
+
+                        jim.setImage(im);
+                     }
+                }
+                if (name.equals("acceptTemplate")){
+                    System.out.println("WTF");
+                    setTemplate = false;
                 }
             }
         });
 
-        pg.addMouseListener(new MouseAdapter() {
-          public void mousePressed(MouseEvent me) {
-            System.out.println("I have been pressed!");
-          }
-        });
-
+        while(setTemplate){
+            System.out.println("Waiting");
+        }
 
         while(true) {
             // read a frame
@@ -140,52 +155,42 @@ public class BallMatch implements MouseListener
             if (buf == null)
                 continue;
 
-            //template = setTemplate(im);
-
             im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
 
             //If button has been clicked get a new template
 
-            /*matchBall(im, template, pg);
+            //matchBall(im, template, pg);
 
             //Place template in the top left corner of the screeen
-            for (int ty = 0; ty < template.getHeight(); ty++) {
-            for (int tx = 0; tx < template.getWidth(); tx++) {
-            im.setRGB(tx, ty, template.getRGB(tx, ty));
+            for (int ty = 0; ty < Y2-Y1; ty++) {
+                for (int tx = 0; tx < X2-X1; tx++) {
+                    im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
+                }
             }
 
-            int [] bounds = {0, 0, template.getWidth(), template.getHeight()};
+            int [] bounds = {0, 0, X2-X1, Y2-Y1};
             markBall(im, bounds);
 
-             */
-            //display image
+            
+            //display image/
             jim.setImage(im);
         }
     }
 
-        public BufferedImage setTemplate(BufferedImage img){
-            return null;
+    public void markBall(BufferedImage img, int[] bounds){
+        // draw the horizontal lines
+        for (int x = bounds[0]; x <=bounds[2]; x++) {
+            img.setRGB(x,bounds[1], 0xff0000ff); //Go Blue!
+            img.setRGB(x,bounds[3], 0xff0000ff); //Go Blue!
         }
 
-        public void markBall(BufferedImage img, int[] bounds){
-
-            // Display the detection, by drawing on the image
-            if (true) {
-                // draw the horizontal lines
-                for (int y : new int[]{bounds[1], bounds[3]})
-                    for (int x = bounds[0]; x <=bounds[2]; x++) {
-                        img.setRGB(x,y, 0xff0000ff); //Go Blue!
-                    }
-
-                // draw the horizontal lines
-                for (int x : new int[]{bounds[0], bounds[2]})
-                    for (int y = bounds[1]; y <=bounds[3]; y++) {
-                        img.setRGB(x,y, 0xff0000ff); //Go Blue!
-                    }
-
-            }
+        // draw the horizontal lines
+        for (int y = bounds[1]; y <=bounds[3]; y++) {
+            img.setRGB(bounds[0],y, 0xff0000ff); //Go Blue!
+            img.setRGB(bounds[2],y, 0xff0000ff); //Go Blue
         }
+     }
 
         public static void main(String args[]) throws IOException
         {
