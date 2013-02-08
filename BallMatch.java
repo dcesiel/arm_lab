@@ -11,6 +11,8 @@ import april.util.*;
 import april.jmat.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Vector;
+
 
 public class BallMatch implements MouseListener
 {  
@@ -26,12 +28,32 @@ public class BallMatch implements MouseListener
 
     //Error Bar Variables
     double error = 0;
-    double errorK = 50;
+    double errorK = 35;
+    int scalefactor = 4;
+
+    //Calibration Globals
+    boolean calibrate = false, notcalibrated = true; 
+	boolean cal1 = false, cal2 = false, cal3 = false, cal4 = false;
+	Location CalPt1 = new Location();
+	Location CalPt2 = new Location();
+	Location CalPt3 = new Location();
+	Location CalPt4 = new Location();
+
+
+	
 
     //GUI Gloabals
     JFrame jf = new JFrame();
     JImage jim = new JImage();
     ParameterGUI pg = new ParameterGUI();
+
+
+    //Locations Found
+    public static class Location{
+		int x = 0;
+		int y = 0;
+    }
+    Vector<Location> found = new Vector<Location>();
 
     
 	public void mouseClicked(MouseEvent e) {}
@@ -45,12 +67,43 @@ public class BallMatch implements MouseListener
 	}
 
 	public void mousePressed(MouseEvent me) {
+			System.out.println("I have be PRESSED!");
              if(getTemplate & onScreen){
                 X1 = me.getX();
                 Y1 = me.getY();
                 System.out.println("X: " + X1 + " Y: " + Y1);
                 clicked = true;
             }
+
+			if(calibrate & !cal1){
+				CalPt1.x = me.getX();
+				CalPt1.y = me.getY();
+				cal1 = true;
+				System.out.println("Calibrating1 X: " + CalPt1.x  + " Y: " + CalPt1.y);
+			}
+			else if(calibrate & onScreen & !cal2){
+				CalPt2.x = me.getX();
+				CalPt2.y = me.getY();
+				cal2 = true;
+				System.out.println("Calibrating2 X: " + CalPt2.x  + " Y: " + CalPt2.y);
+
+			}
+			else if(calibrate & onScreen & !cal3){
+				CalPt3.x = me.getX();
+				CalPt3.y = me.getY();
+				cal3 = true;
+				System.out.println("Calibrating3 X: " + CalPt3.x  + " Y: " + CalPt3.y);
+			}
+			else if(calibrate & onScreen & !cal4){
+				CalPt4.x = me.getX();
+				CalPt4.y = me.getY();
+				cal4 = true;
+				System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
+				calibrate = false;
+				notcalibrated = false;
+			}
+
+
 	}
 
 	public void mouseReleased(MouseEvent me) {
@@ -62,7 +115,7 @@ public class BallMatch implements MouseListener
                 getTemplate = false;
                 template = im;          
                 int bounds[] = {X1, Y1, X2, Y2};
-                markBall(im, bounds);
+                mark(im, bounds, 0xff0000ff);
 
                 jim.setImage(im);
             }
@@ -99,10 +152,10 @@ public class BallMatch implements MouseListener
         error = 0;
         boolean nskiped = true;
 
-        for (int y = 0; y < im.getHeight() - tsizeY; y++){
-            for (int x = 0; x < im.getWidth() - tsizeX; x++){
-                for (int ty = 0; ty < tsizeY; ty++) {
-                  for (int tx = 0; tx < tsizeX; tx++) {
+        for (int y = 0; y < im.getHeight() - tsizeY; y += scalefactor){
+            for (int x = 0; x < im.getWidth() - tsizeX; x += scalefactor){
+                for (int ty = 0; ty < tsizeY; ty += scalefactor) {
+                  for (int tx = 0; tx < tsizeX; tx += scalefactor) {
                         int templateRGB = template.getRGB(X1 + tx, Y1 + ty);
                         int imageRGB = im.getRGB(x + tx, y + ty);
 
@@ -117,15 +170,19 @@ public class BallMatch implements MouseListener
                                             Math.pow(templateBlue - imageBlue,2));
                     
                     }
-                    if (error > errorK * tsizeX * tsizeY){
+                    if (error > (errorK * tsizeX * tsizeY)/ (2 * scalefactor)){
                         nskiped = false;
                         break;
                     }
                 }
-                if (error < errorK * tsizeX * tsizeY & nskiped){
+                if (error < (errorK * tsizeX * tsizeY)/(2*scalefactor) & nskiped){
                    System.out.println("Error is " + error + "    K is " + errorK);
                     int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
-                    markBall(im, bounds);
+                    mark(im, bounds, 0xff0000ff);
+                    Location loc = new Location();
+                    loc.x = (X2 + X1)/2;
+                    loc.y = (Y1 + Y2)/2;
+                    found.add(loc);
                 }
                 error = 0;
                 nskiped = true;
@@ -152,15 +209,24 @@ public class BallMatch implements MouseListener
                      }
                 }
                 if (name.equals("acceptTemplate")){
-                    System.out.println("WTF");
+                    System.out.println("Template has been accepted!");
                     setTemplate = false;
+                }
+                if (name.equals("calibrate")){
+                    System.out.println("Calibration Time");
+                    calibrate = true;
                 }
             }
         });
 
         while(setTemplate){
-            System.out.println("Waiting");
+            System.out.println("Templating...");
         }
+
+		while(notcalibrated){
+			System.out.println("Calibrating...");
+		}
+			
 
         while(true) {
             // read a frame
@@ -180,26 +246,41 @@ public class BallMatch implements MouseListener
                     im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
                 }
             }
-
             int [] bounds = {0, 0, X2-X1, Y2-Y1};
-            markBall(im, bounds);
+            mark(im, bounds, 0xff0000ff);
+
+			//mark calibration points
+			int [] bounds1 = {CalPt1.x - 1, CalPt1.y - 1, CalPt1.x + 1, CalPt1.y + 1};
+			mark(im, bounds1, 0xffff0000);
+
+			int [] bounds2 = {CalPt2.x - 1, CalPt2.y - 1, CalPt2.x + 1, CalPt2.y + 1};
+			mark(im, bounds2, 0xffff0000);
+		
+			int [] bounds3 = {CalPt3.x - 1, CalPt3.y - 1, CalPt3.x + 1, CalPt3.y + 1};
+			mark(im, bounds3, 0xffff0000);
+
+			int [] bounds4 = {CalPt4.x - 1, CalPt4.y - 1, CalPt4.x + 1, CalPt4.y + 1};
+			mark(im, bounds4, 0xffff0000);
+
+
+
 
             //display image/
             jim.setImage(im);
         }
     }
 
-    public void markBall(BufferedImage img, int[] bounds){
+    public void mark(BufferedImage img, int[] bounds, int color){
         // draw the horizontal lines
         for (int x = bounds[0]; x <=bounds[2]; x++) {
-            img.setRGB(x,bounds[1], 0xff0000ff); //Go Blue!
-            img.setRGB(x,bounds[3], 0xff0000ff); //Go Blue!
+            img.setRGB(x,bounds[1], color); //Go Blue!
+            img.setRGB(x,bounds[3], color); //Go Blue!
         }
 
         // draw the horizontal lines
         for (int y = bounds[1]; y <=bounds[3]; y++) {
-            img.setRGB(bounds[0],y, 0xff0000ff); //Go Blue!
-            img.setRGB(bounds[2],y, 0xff0000ff); //Go Blue
+            img.setRGB(bounds[0],y, color); //Go Blue!
+            img.setRGB(bounds[2],y, color); //Go Blue
         }
      }
 
