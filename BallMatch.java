@@ -39,7 +39,8 @@ public class BallMatch implements MouseListener
 	Location CalPt3 = new Location();
 	Location CalPt4 = new Location();
 
-
+	//Globals for runing
+	boolean run = false;
 	
 
     //GUI Gloabals
@@ -101,6 +102,8 @@ public class BallMatch implements MouseListener
 				System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
 				calibrate = false;
 				notcalibrated = false;
+System.out.println("Calibrating4" + notcalibrated);
+
 			}
 
 
@@ -116,7 +119,6 @@ public class BallMatch implements MouseListener
                 template = im;          
                 int bounds[] = {X1, Y1, X2, Y2};
                 mark(im, bounds, 0xff0000ff);
-
                 jim.setImage(im);
             }
 	}
@@ -147,6 +149,8 @@ public class BallMatch implements MouseListener
     // Returns the bounds of the pixel coordinates of the led: {min_x, min_y, max_x, max_y}
     public void matchBall()
     {
+
+	errorK = pg.gd("errork");
         int tsizeX = X2 - X1;
         int tsizeY = Y2 - Y1;
         error = 0;
@@ -216,19 +220,27 @@ public class BallMatch implements MouseListener
                     System.out.println("Calibration Time");
                     calibrate = true;
                 }
+                if (name.equals("start")){
+                    System.out.println("Running Time");
+                    run = true;
+                }
             }
         });
 
-        while(setTemplate){
-            System.out.println("Templating...");
-        }
+		//Waiting for Template
+		System.out.println("Waiting to Template.");
+        while(setTemplate){System.out.println(setTemplate);}
 
-		while(notcalibrated){
-			System.out.println("Calibrating...");
-		}
+		//Waiting for Calibration
+		System.out.println("Waiting to Calibrating");
+		while(notcalibrated){System.out.println("CAL" + notcalibrated);}
+
+		//Waiting to Start
+		System.out.println("Waiting to Start");
+		while(!run){System.out.println("SART" + run);}
 			
 
-        while(true) {
+        while(run) {
             // read a frame
             byte buf[] = is.getFrame().data;
             if (buf == null)
@@ -240,7 +252,13 @@ public class BallMatch implements MouseListener
             //If button has been clicked get a new template
             matchBall();
 
-            //Place template in the top left corner of the screeen
+            //outputs the image template and calibration points to the screen
+			screenOutput();
+        }
+    }
+
+	public void screenOutput(){
+			//Place template in the top left corner of the screeen
             for (int ty = 0; ty < Y2-Y1; ty++) {
                 for (int tx = 0; tx < X2-X1; tx++) {
                     im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
@@ -267,9 +285,7 @@ public class BallMatch implements MouseListener
 
             //display image/
             jim.setImage(im);
-        }
-    }
-
+	}
     public void mark(BufferedImage img, int[] bounds, int color){
         // draw the horizontal lines
         for (int x = bounds[0]; x <=bounds[2]; x++) {
