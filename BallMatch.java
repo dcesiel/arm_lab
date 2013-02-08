@@ -30,6 +30,9 @@ public class BallMatch implements MouseListener
     double error = 0;
     double errorK = 35;
     int scalefactor = 4;
+	int pRange = 20;
+
+
 
     //Calibration Globals
     boolean calibrate = false, notcalibrated = true; 
@@ -55,6 +58,8 @@ public class BallMatch implements MouseListener
 		int y = 0;
     }
     Vector<Location> found = new Vector<Location>();
+	Vector<Location> located = new Vector<Location>();
+
 
     
 	public void mouseClicked(MouseEvent e) {}
@@ -184,14 +189,67 @@ System.out.println("Calibrating4" + notcalibrated);
                     int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
                     mark(im, bounds, 0xff0000ff);
                     Location loc = new Location();
-                    loc.x = (X2 + X1)/2;
-                    loc.y = (Y1 + Y2)/2;
+                    loc.x = (x + x + X2 - X1)/2;
+                    loc.y = (y +y + Y2 - Y1)/2;
                     found.add(loc);
                 }
                 error = 0;
                 nskiped = true;
             }
         }
+
+		int X = 0, Y = 0, totalX = 0, totalY = 0, count = 0;
+		int compX = 0, compY = 0;
+		int bound[] = new int[4];
+		System.out.println("found " + found.size());
+
+		while(0 != found.size()){
+			
+			X = found.get(0).x;
+			Y = found.get(0).y;
+			totalX += X;
+			totalY += Y;
+			count++;
+			found.remove(0);
+			System.out.println("found1 " + found.size());
+System.out.println("HHHH " + X + " " + Y);
+
+			for(int i = 0; i < found.size(); i++){
+				compX = found.get(i).x;
+				compY = found.get(i).y;
+				System.out.println("HHHH " + compX + " " + compY);
+
+				if(((compX <= X) & (compX + pRange >= X)) |
+					((compX >= X) & (compX- pRange <= X))){
+					if(((compY <= Y) & (compY + pRange >= Y)) |
+						((compY >= Y) & (compY - pRange <= Y))){
+						totalX += compX;
+						totalY += compY;
+						count++;
+						found.remove(i);
+						i--;
+						System.out.println("found2 " + found.size());
+					}
+				}
+			}
+			Location temp = new Location();
+			temp.x = totalX / count;
+			temp.y = totalY / count;
+
+			totalX = 0;
+			totalY = 0;
+			count = 0;
+			
+			bound[0] = temp.x -1;
+			bound[1] =  temp.y -1;
+			bound[2] =  temp.x + 1;
+			bound[3] = temp.y+1;
+            mark(im, bound, 0xff00ff00);
+
+
+			//add code to optimize the order of balls that should be retrived
+			located.add(temp);
+		}				
     }
 
     public void run(){
