@@ -9,6 +9,7 @@ import java.awt.event.*;
 import april.jcam.*;
 import april.util.*;
 import april.jmat.*;
+import april.jmat.Matrix;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Vector;
@@ -32,8 +33,6 @@ public class BallMatch implements MouseListener
     int scalefactor = 4;
 	int pRange = 20;
 
-
-
     //Calibration Globals
     boolean calibrate = false, notcalibrated = true; 
 	boolean cal1 = false, cal2 = false, cal3 = false, cal4 = false;
@@ -41,9 +40,13 @@ public class BallMatch implements MouseListener
 	Location CalPt2 = new Location();
 	Location CalPt3 = new Location();
 	Location CalPt4 = new Location();
+	int calibrationDistance = 11;
+	Matrix calibrationInverse;
 
 	//Globals for runing
 	boolean run = false;
+	double Range1 = 5;
+	double Range2 = 11;
 	
 
     //GUI Gloabals
@@ -54,12 +57,35 @@ public class BallMatch implements MouseListener
 
     //Locations Found
     public static class Location{
-		int x = 0;
-		int y = 0;
+		double x = 0;
+		double y = 0;
     }
     Vector<Location> found = new Vector<Location>();
 	Vector<Location> located = new Vector<Location>();
 
+
+    public BallMatch(ImageSource _is)
+    {
+        is = _is;
+
+        // Determine which slider values we want
+        pg.addDoubleSlider("errork","error Threshold",0,100, errorK);
+        pg.addButtons("getTemplateButton", "Grab new template");
+    	pg.addButtons("acceptTemplate", "Accept Template");
+        pg.addButtons("calibrate", "Calibrate");
+	    pg.addButtons("start", "Start");
+	   	
+        jim.setFit(true);
+	
+        // Setup window layout
+        jf.setLayout(new BorderLayout());
+        jf.add(jim, BorderLayout.NORTH);
+        jf.add(pg, BorderLayout.SOUTH);
+        jf.setSize(800, 800);
+        jf.setVisible(true);
+        jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        jim.addMouseListener(this);
+    }
 
     
 	public void mouseClicked(MouseEvent e) {}
@@ -107,11 +133,8 @@ public class BallMatch implements MouseListener
 				System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
 				calibrate = false;
 				notcalibrated = false;
-System.out.println("Calibrating4" + notcalibrated);
-
+				System.out.println("Calibrating4" + notcalibrated);
 			}
-
-
 	}
 
 	public void mouseReleased(MouseEvent me) {
@@ -127,35 +150,63 @@ System.out.println("Calibrating4" + notcalibrated);
                 jim.setImage(im);
             }
 	}
+	public void screenOutput(){
+			//Place template in the top left corner of the screeen
+            for (int ty = 0; ty < Y2-Y1; ty++) {
+                for (int tx = 0; tx < X2-X1; tx++) {
+                    im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
+                }
+            }
+            int [] bounds = {0, 0, X2-X1, Y2-Y1};
+            mark(im, bounds, 0xff0000ff);
 
-    public BallMatch(ImageSource _is)
-    {
-        is = _is;
+			//mark calibration points
+			int [] bounds1 = {(int)CalPt1.x - 1, (int)CalPt1.y - 1, (int)CalPt1.x + 1, (int)CalPt1.y + 1};
+			mark(im, bounds1, 0xffff0000);
 
-        // Determine which slider values we want
-        pg.addDoubleSlider("errork","error Threshold",0,100, errorK);
-        pg.addButtons("getTemplateButton", "Grab new template");
-    	pg.addButtons("acceptTemplate", "Accept Template");
-        pg.addButtons("calibrate", "Calibrate");
-	    pg.addButtons("start", "Start");
-	   	
-        jim.setFit(true);
-	
-        // Setup window layout
-        jf.setLayout(new BorderLayout());
-        jf.add(jim, BorderLayout.NORTH);
-        jf.add(pg, BorderLayout.SOUTH);
-        jf.setSize(800, 800);
-        jf.setVisible(true);
-        jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        jim.addMouseListener(this);
-    }
+			int [] bounds2 = {(int)CalPt2.x - 1, (int)CalPt2.y - 1, (int)CalPt2.x + 1, (int)CalPt2.y + 1};
+			mark(im, bounds2, 0xffff0000);
+		
+			int [] bounds3 = {(int)CalPt3.x - 1, (int)CalPt3.y - 1, (int)CalPt3.x + 1, (int)CalPt3.y + 1};
+			mark(im, bounds3, 0xffff0000);
+
+			int [] bounds4 = {(int)CalPt4.x - 1, (int)CalPt4.y - 1, (int)CalPt4.x + 1, (int)CalPt4.y + 1};
+			mark(im, bounds4, 0xffff0000);
+
+
+            //display image/
+            jim.setImage(im);
+	}
+
+    public void mark(BufferedImage img, int[] bounds, int color){
+        // draw the horizontal lines
+        for (int x = bounds[0]; x <=bounds[2]; x++) {
+            img.setRGB(x,bounds[1], color); //Go Blue!
+            img.setRGB(x,bounds[3], color); //Go Blue!
+        }
+
+        // draw the horizontal lines
+        for (int y = bounds[1]; y <=bounds[3]; y++) {
+            img.setRGB(bounds[0],y, color); //Go Blue!
+            img.setRGB(bounds[2],y, color); //Go Blue
+        }
+     }
+
 
     // Returns the bounds of the pixel coordinates of the led: {min_x, min_y, max_x, max_y}
     public void matchBall()
     {
+        final ImageSourceFormat fmt = is.getCurrentFormat();
 
-	errorK = pg.gd("errork");
+    	// read a frame
+		byte buf[] = is.getFrame().data;
+            if (buf == null)
+                return;
+
+		im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
+
+
+		errorK = pg.gd("errork");
         int tsizeX = X2 - X1;
         int tsizeY = Y2 - Y1;
         error = 0;
@@ -185,7 +236,7 @@ System.out.println("Calibrating4" + notcalibrated);
                     }
                 }
                 if (error < (errorK * tsizeX * tsizeY)/(2*scalefactor) & nskiped){
-                   System.out.println("Error is " + error + "    K is " + errorK);
+                    System.out.println("Error is " + error + "    K is " + errorK);
                     int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
                     mark(im, bounds, 0xff0000ff);
                     Location loc = new Location();
@@ -205,19 +256,16 @@ System.out.println("Calibrating4" + notcalibrated);
 
 		while(0 != found.size()){
 			
-			X = found.get(0).x;
-			Y = found.get(0).y;
+			X = (int)found.get(0).x;
+			Y = (int)found.get(0).y;
 			totalX += X;
 			totalY += Y;
 			count++;
 			found.remove(0);
-			System.out.println("found1 " + found.size());
-System.out.println("HHHH " + X + " " + Y);
 
 			for(int i = 0; i < found.size(); i++){
-				compX = found.get(i).x;
-				compY = found.get(i).y;
-				System.out.println("HHHH " + compX + " " + compY);
+				compX = (int)found.get(i).x;
+				compY = (int)found.get(i).y;
 
 				if(((compX <= X) & (compX + pRange >= X)) |
 					((compX >= X) & (compX- pRange <= X))){
@@ -228,7 +276,6 @@ System.out.println("HHHH " + X + " " + Y);
 						count++;
 						found.remove(i);
 						i--;
-						System.out.println("found2 " + found.size());
 					}
 				}
 			}
@@ -240,10 +287,10 @@ System.out.println("HHHH " + X + " " + Y);
 			totalY = 0;
 			count = 0;
 			
-			bound[0] = temp.x -1;
-			bound[1] =  temp.y -1;
-			bound[2] =  temp.x + 1;
-			bound[3] = temp.y+1;
+			bound[0] = (int)temp.x -1;
+			bound[1] = (int)temp.y -1;
+			bound[2] = (int)temp.x + 1;
+			bound[3] = (int)temp.y+1;
             mark(im, bound, 0xff00ff00);
 
 
@@ -252,11 +299,126 @@ System.out.println("HHHH " + X + " " + Y);
 		}				
     }
 
+//======================================================================//
+// calibrate()                                                          //
+// Uses the affine transform to map the pixels to the cordiates of the  //
+// board. Stores solution in calibration.                               //
+//======================================================================//  
+	public void calibrate(){
+
+		//create matrix for the 6 equations need to solve for affine
+		double[][] A = {
+			{CalPt1.x, 	CalPt1.y, 		1, 		0,			0, 			0},
+			{0,			0,				0,		CalPt1.x,	CalPt1.y, 	1},
+			{CalPt2.x, 	CalPt2.y, 		1, 		0,			0, 			0},
+			{0,			0,				0,		CalPt2.x,	CalPt2.y, 	1},
+			{CalPt3.x, 	CalPt3.y, 		1, 		0,			0, 			0},
+			{0,			0,				0,		CalPt3.x,	CalPt3.y, 	1}};
+		Matrix matA = new Matrix(A); 
+
+		//Create matrix for the solutions to the 6 equations 
+		double[][] B = {
+						{11},
+						{0},
+						{0},
+						{11},
+						{-11},
+						{0}};
+		Matrix matB = new Matrix(B); 
+		
+		//invert matix A mutiple with B for solution
+		matA.inverse();
+		Matrix calibrationSolution = matA.times(matB);
+
+		//make calibration matrix that can be used for mapping pixels
+		double tempCal[][] = new double[6][1];
+		calibrationSolution.copyToArray(tempCal);
+		
+		double[][] calibrationArray = {
+			{tempCal[0][0], 	tempCal[1][0], 		tempCal[2][0]},
+			{tempCal[3][0], 	tempCal[4][0], 		tempCal[5][0]},
+			{0,					0,					1			 }};
+
+		calibrationInverse = new Matrix(calibrationArray);
+		calibrationInverse.inverse();
+	}
+
+
+//======================================================================//
+// mapToBoard()                                                         //
+// Mutiple the pixel location by the inverse of the calibration to get  //
+// the ob board location.                                               //
+//======================================================================//
+	public Location mapToBoard(Location pixel){
+		
+		double[][]B = {
+						{pixel.x},
+						{pixel.y},
+						{1}};
+		Matrix matB = new Matrix(B);
+						
+		//Mutiple A by pixel to get on board location
+		Matrix boardLoc = calibrationInverse.times(matB);
+		
+		//return location as a Location
+		double temp[][] = new double[3][1];
+		boardLoc.copyToArray(temp);
+		
+		Location location = new Location();
+		location.x = temp[0][0];
+		location.y = temp[1][0];
+
+		return location;		
+	}
+
+	public void pickUp90(Location location){}
+
+	public void pickUpStraight(Location location){}
+
+
+//======================================================================//
+// ballPickUp()                                                         //
+// Determins how far a ball is away from the arm. Depending on it's     //
+// different pick functions are called.                                 //
+//======================================================================//
+	public void ballPickUp(){
+	
+		while( ! located.isEmpty()){
+			Location curBall = new Location();
+			curBall = located.get(0);
+
+			curBall = mapToBoard(curBall);
+
+			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2)); 
+
+			if(armDistance < Range1){
+				pickUp90(curBall);
+			}
+			else if (armDistance < Range2){
+				pickUpStraight(curBall);
+			}
+			else{
+				System.out.println("Ball out of range, why was this put in found!!!!!!!");
+			}
+	
+			located.remove(0);
+		}
+	}
+
+  
+//======================================================================//
+// run()                                                                //
+// Gets template, calibrates and maps pixels to board.                  //
+// Upon start being pressed begins template matching and picking up     //
+// balls. After all balls that can be picked up have been picked up     //
+// ends operatation.
+//======================================================================//
     public void run(){
         is.start();
-        final ImageSourceFormat fmt = is.getCurrentFormat();
+		final ImageSourceFormat fmt = is.getCurrentFormat();
 
-        // Initialize visualization environment now that we know the image dimensions
+        // Initialize visualization environment now that we know 
+		// the image dimensions
         pg.addListener(new ParameterListener() {
             public void parameterChanged(ParameterGUI pg, String name)
             {
@@ -293,93 +455,45 @@ System.out.println("HHHH " + X + " " + Y);
 		System.out.println("Waiting to Calibrating");
 		while(notcalibrated){System.out.println("CAL" + notcalibrated);}
 
+		//Maps pixel locations to the board
+		calibrate();
+
 		//Waiting to Start
 		System.out.println("Waiting to Start");
 		while(!run){System.out.println("SART" + run);}
 			
 
+		//Begin template matching and picking up balls
         while(run) {
-            // read a frame
-            byte buf[] = is.getFrame().data;
-            if (buf == null)
-                continue;
 
-            im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
-
-
-            //If button has been clicked get a new template
             matchBall();
 
-            //outputs the image template and calibration points to the screen
 			screenOutput();
+
+			ballPickUp();
         }
     }
 
-	public void screenOutput(){
-			//Place template in the top left corner of the screeen
-            for (int ty = 0; ty < Y2-Y1; ty++) {
-                for (int tx = 0; tx < X2-X1; tx++) {
-                    im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
-                }
-            }
-            int [] bounds = {0, 0, X2-X1, Y2-Y1};
-            mark(im, bounds, 0xff0000ff);
+    public static void main(String args[]) throws IOException
+    {
+        ArrayList<String> urls = ImageSource.getCameraURLs();
 
-			//mark calibration points
-			int [] bounds1 = {CalPt1.x - 1, CalPt1.y - 1, CalPt1.x + 1, CalPt1.y + 1};
-			mark(im, bounds1, 0xffff0000);
+		String url = null;
+        if (urls.size()==1)
+        	url = urls.get(0);
 
-			int [] bounds2 = {CalPt2.x - 1, CalPt2.y - 1, CalPt2.x + 1, CalPt2.y + 1};
-			mark(im, bounds2, 0xffff0000);
-		
-			int [] bounds3 = {CalPt3.x - 1, CalPt3.y - 1, CalPt3.x + 1, CalPt3.y + 1};
-			mark(im, bounds3, 0xffff0000);
+        if (args.length > 0)
+            url = args[0];
 
-			int [] bounds4 = {CalPt4.x - 1, CalPt4.y - 1, CalPt4.x + 1, CalPt4.y + 1};
-			mark(im, bounds4, 0xffff0000);
-
-
-
-
-            //display image/
-            jim.setImage(im);
-	}
-    public void mark(BufferedImage img, int[] bounds, int color){
-        // draw the horizontal lines
-        for (int x = bounds[0]; x <=bounds[2]; x++) {
-            img.setRGB(x,bounds[1], color); //Go Blue!
-            img.setRGB(x,bounds[3], color); //Go Blue!
+        if (url == null) {
+           System.out.printf("Cameras found:\n");
+           for (String u : urls)
+               System.out.printf("  %s\n", u);
+        	   System.out.printf("Please specify one on the command line.\n");
+               return;
         }
 
-        // draw the horizontal lines
-        for (int y = bounds[1]; y <=bounds[3]; y++) {
-            img.setRGB(bounds[0],y, color); //Go Blue!
-            img.setRGB(bounds[2],y, color); //Go Blue
-        }
-     }
-
-        public static void main(String args[]) throws IOException
-        {
-            ArrayList<String> urls = ImageSource.getCameraURLs();
-
-            String url = null;
-            if (urls.size()==1)
-                url = urls.get(0);
-
-            if (args.length > 0)
-                url = args[0];
-
-            if (url == null) {
-                System.out.printf("Cameras found:\n");
-                for (String u : urls)
-                    System.out.printf("  %s\n", u);
-                System.out.printf("Please specify one on the command line.\n");
-                return;
-            }
-
-            ImageSource is = ImageSource.make(url);
-            new BallMatch(is).run();
-        }
-
-
+        ImageSource is = ImageSource.make(url);
+        new BallMatch(is).run();
     }
+}
