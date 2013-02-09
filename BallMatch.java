@@ -16,38 +16,38 @@ import java.util.Vector;
 
 
 public class BallMatch implements MouseListener
-{  
+{
 
-    //Image Globals    
+    //Image Globals
     ImageSource is;
     BufferedImage template = null;
     BufferedImage im = null;
 
     //Template creation globals
-    boolean clicked, getTemplate, onScreen, setTemplate = true, update = true;
+    boolean clicked, getTemplate, onScreen, setTemplate = true, first = true;
     int X1 = 0, X2 = 1, Y1 = 0, Y2 = 1;
 
     //Error Bar Variables
     double error = 0;
-    double errorK = 35;
+    double errorK = 45;
     int scalefactor = 4;
 	int pRange = 20;
 
     //Calibration Globals
-    boolean calibrate = false, notcalibrated = true; 
+    boolean calibrate = false, notcalibrated = true;
 	boolean cal1 = false, cal2 = false, cal3 = false, cal4 = false;
 	Location CalPt1 = new Location();
 	Location CalPt2 = new Location();
 	Location CalPt3 = new Location();
 	Location CalPt4 = new Location();
-	int calibrationDistance = 11;
-	Matrix calibrationInverse;
+	double bDistance = 24*2.54;
+	Matrix calibration;
 
 	//Globals for runing
 	boolean run = false;
-	double Range1 = 5;
-	double Range2 = 11;
-	
+	double Range1 = 21;
+	double Range2 = 37;
+
 
     //GUI Gloabals
     JFrame jf = new JFrame();
@@ -74,9 +74,9 @@ public class BallMatch implements MouseListener
     	pg.addButtons("acceptTemplate", "Accept Template");
         pg.addButtons("calibrate", "Calibrate");
 	    pg.addButtons("start", "Start");
-	   	
+
         jim.setFit(true);
-	
+
         // Setup window layout
         jf.setLayout(new BorderLayout());
         jf.add(jim, BorderLayout.NORTH);
@@ -87,7 +87,7 @@ public class BallMatch implements MouseListener
         jim.addMouseListener(this);
     }
 
-    
+
 	public void mouseClicked(MouseEvent e) {}
 
 	public void mouseEntered(MouseEvent e) {
@@ -99,15 +99,26 @@ public class BallMatch implements MouseListener
 	}
 
 	public void mousePressed(MouseEvent me) {
-			System.out.println("I have be PRESSED!");
-             if(getTemplate & onScreen){
+			System.out.println("I haecoding strove be PRESSED!");
+             if(getTemplate & onScreen & first){
                 X1 = me.getX();
                 Y1 = me.getY();
                 System.out.println("X: " + X1 + " Y: " + Y1);
-                clicked = true;
+                first = false;
+            }
+            else if(getTemplate & onScreen ){
+                X2 = me.getX();
+                Y2 = me.getY();
+                System.out.println("X: " + X2 + " Y: " + Y2);
+                getTemplate = false;
+                template = im;
+                int bounds[] = {X1, Y1, X2, Y2};
+                mark(im, bounds, 0xff0000ff);
+                jim.setImage(im);
             }
 
-			if(calibrate & !cal1){
+
+			if(calibrate & !cal1 & onScreen ){
 				CalPt1.x = me.getX();
 				CalPt1.y = me.getY();
 				cal1 = true;
@@ -137,19 +148,8 @@ public class BallMatch implements MouseListener
 			}
 	}
 
-	public void mouseReleased(MouseEvent me) {
-            if(getTemplate & onScreen){
-                X2 = me.getX();
-                Y2 = me.getY();
-                System.out.println("X: " + X2 + " Y: " + Y2);
-                clicked = false;
-                getTemplate = false;
-                template = im;          
-                int bounds[] = {X1, Y1, X2, Y2};
-                mark(im, bounds, 0xff0000ff);
-                jim.setImage(im);
-            }
-	}
+	public void mouseReleased(MouseEvent me) {}
+
 	public void screenOutput(){
 			//Place template in the top left corner of the screeen
             for (int ty = 0; ty < Y2-Y1; ty++) {
@@ -166,7 +166,7 @@ public class BallMatch implements MouseListener
 
 			int [] bounds2 = {(int)CalPt2.x - 1, (int)CalPt2.y - 1, (int)CalPt2.x + 1, (int)CalPt2.y + 1};
 			mark(im, bounds2, 0xffff0000);
-		
+
 			int [] bounds3 = {(int)CalPt3.x - 1, (int)CalPt3.y - 1, (int)CalPt3.x + 1, (int)CalPt3.y + 1};
 			mark(im, bounds3, 0xffff0000);
 
@@ -205,7 +205,6 @@ public class BallMatch implements MouseListener
 
 		im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
-
 		errorK = pg.gd("errork");
         int tsizeX = X2 - X1;
         int tsizeY = Y2 - Y1;
@@ -228,7 +227,6 @@ public class BallMatch implements MouseListener
                         error +=  Math.sqrt(Math.pow(templateRed - imageRed,2) +
                                             Math.pow(templateGreen - imageGreen,2) +
                                             Math.pow(templateBlue - imageBlue,2));
-                    
                     }
                     if (error > (errorK * tsizeX * tsizeY)/ (2 * scalefactor)){
                         nskiped = false;
@@ -255,7 +253,6 @@ public class BallMatch implements MouseListener
 		System.out.println("found " + found.size());
 
 		while(0 != found.size()){
-			
 			X = (int)found.get(0).x;
 			Y = (int)found.get(0).y;
 			totalX += X;
@@ -286,7 +283,7 @@ public class BallMatch implements MouseListener
 			totalX = 0;
 			totalY = 0;
 			count = 0;
-			
+
 			bound[0] = (int)temp.x -1;
 			bound[1] = (int)temp.y -1;
 			bound[2] = (int)temp.x + 1;
@@ -296,14 +293,14 @@ public class BallMatch implements MouseListener
 
 			//add code to optimize the order of balls that should be retrived
 			located.add(temp);
-		}				
+		}
     }
 
 //======================================================================//
-// calibrate()                                                          //
+// calibrate()                         ecoding stro                                 //
 // Uses the affine transform to map the pixels to the cordiates of the  //
 // board. Stores solution in calibration.                               //
-//======================================================================//  
+//======================================================================//
 	public void calibrate(){
 
 		//create matrix for the 6 equations need to solve for affine
@@ -314,33 +311,39 @@ public class BallMatch implements MouseListener
 			{0,			0,				0,		CalPt2.x,	CalPt2.y, 	1},
 			{CalPt3.x, 	CalPt3.y, 		1, 		0,			0, 			0},
 			{0,			0,				0,		CalPt3.x,	CalPt3.y, 	1}};
-		Matrix matA = new Matrix(A); 
+		Matrix matA = new Matrix(A);
 
-		//Create matrix for the solutions to the 6 equations 
+		//Create matrix for the solutions to the 6 equations
 		double[][] B = {
-						{11},
-						{0},
-						{0},
-						{11},
-						{-11},
-						{0}};
-		Matrix matB = new Matrix(B); 
-		
+						{bDistance/2},
+						{bDistance/2},
+						{-bDistance/2},
+						{bDistance/2},
+						{-bDistance/2},
+						{-bDistance/2}};
+
+		Matrix matB = new Matrix(B);
+
+        matA.print();
+        matB.print();
+
 		//invert matix A mutiple with B for solution
-		matA.inverse();
-		Matrix calibrationSolution = matA.times(matB);
+		Matrix matAInverse = matA.inverse();
+		Matrix calibrationSolution = matAInverse.times(matB);
+
+        matAInverse.print();
+        calibrationSolution.print();
 
 		//make calibration matrix that can be used for mapping pixels
 		double tempCal[][] = new double[6][1];
 		calibrationSolution.copyToArray(tempCal);
-		
+
 		double[][] calibrationArray = {
 			{tempCal[0][0], 	tempCal[1][0], 		tempCal[2][0]},
 			{tempCal[3][0], 	tempCal[4][0], 		tempCal[5][0]},
 			{0,					0,					1			 }};
 
-		calibrationInverse = new Matrix(calibrationArray);
-		calibrationInverse.inverse();
+		calibration = new Matrix(calibrationArray);
 	}
 
 
@@ -350,25 +353,27 @@ public class BallMatch implements MouseListener
 // the ob board location.                                               //
 //======================================================================//
 	public Location mapToBoard(Location pixel){
-		
+
 		double[][]B = {
 						{pixel.x},
 						{pixel.y},
 						{1}};
 		Matrix matB = new Matrix(B);
-						
+
 		//Mutiple A by pixel to get on board location
-		Matrix boardLoc = calibrationInverse.times(matB);
-		
+		Matrix boardLoc = calibration.times(matB);
+
 		//return location as a Location
 		double temp[][] = new double[3][1];
 		boardLoc.copyToArray(temp);
-		
+
 		Location location = new Location();
 		location.x = temp[0][0];
 		location.y = temp[1][0];
 
-		return location;		
+         System.out.println("XXXXXXXXXXXXXXXX " + location.x + " " +  location.y);
+
+		return location;
 	}
 
 	public void pickUp90(Location location){}
@@ -382,14 +387,16 @@ public class BallMatch implements MouseListener
 // different pick functions are called.                                 //
 //======================================================================//
 	public void ballPickUp(){
-	
+
 		while( ! located.isEmpty()){
 			Location curBall = new Location();
 			curBall = located.get(0);
 
 			curBall = mapToBoard(curBall);
 
-			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2)); 
+            System.out.println("XXXXXXXXXXXXXXXX " + curBall.x + " " +  curBall.y);
+
+			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2));
 
 			if(armDistance < Range1){
 				pickUp90(curBall);
@@ -400,12 +407,12 @@ public class BallMatch implements MouseListener
 			else{
 				System.out.println("Ball out of range, why was this put in found!!!!!!!");
 			}
-	
+
 			located.remove(0);
 		}
 	}
 
-  
+
 //======================================================================//
 // run()                                                                //
 // Gets template, calibrates and maps pixels to board.                  //
@@ -417,18 +424,18 @@ public class BallMatch implements MouseListener
         is.start();
 		final ImageSourceFormat fmt = is.getCurrentFormat();
 
-        // Initialize visualization environment now that we know 
+        // Initialize visualization environment now that we know
 		// the image dimensions
         pg.addListener(new ParameterListener() {
             public void parameterChanged(ParameterGUI pg, String name)
             {
                 if (name.equals("getTemplateButton")){
+                    first = true;
                     getTemplate = true;
                     // read a frame
                     byte buf[] = is.getFrame().data;
                     if (buf != null){
                         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
-
                         jim.setImage(im);
                      }
                 }
@@ -447,13 +454,15 @@ public class BallMatch implements MouseListener
             }
         });
 
+
 		//Waiting for Template
 		System.out.println("Waiting to Template.");
         while(setTemplate){System.out.println(setTemplate);}
 
+
 		//Waiting for Calibration
 		System.out.println("Waiting to Calibrating");
-		while(notcalibrated){System.out.println("CAL" + notcalibrated);}
+		while(notcalibrated){System.out.print(".");}
 
 		//Maps pixel locations to the board
 		calibrate();
@@ -461,7 +470,6 @@ public class BallMatch implements MouseListener
 		//Waiting to Start
 		System.out.println("Waiting to Start");
 		while(!run){System.out.println("SART" + run);}
-			
 
 		//Begin template matching and picking up balls
         while(run) {
@@ -479,6 +487,7 @@ public class BallMatch implements MouseListener
         ArrayList<String> urls = ImageSource.getCameraURLs();
 
 		String url = null;
+
         if (urls.size()==1)
         	url = urls.get(0);
 
