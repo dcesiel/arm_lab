@@ -3,6 +3,20 @@ arm_lab
 
 EECS 498 arm lab
 
+To start listening to lcm messages:
+
+    cd java
+    
+To get ttyUSB:
+
+    ls /dev/ttyUSB*
+
+To start the arm driver:
+
+    java -cp "$CLASSPATH:/home/MYUSERNAME/arm_lab/java/armlab.jar" armlab.arm.ArmDriver -d /dev/ttyUSB[x]
+
+
+
 
 Arm Dimensions:
 Base:
