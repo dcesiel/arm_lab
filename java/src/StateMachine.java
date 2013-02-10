@@ -75,16 +75,23 @@ public class StateMachine
 
         double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
         double MSq = M * M;
-        double ThetaA = Math.asin((armSubBase-M));
+        double ThetaA = Math.asin((armSubBase/M));
         double ThetaB = Math.asin((armDistance/M));
 
         double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
+        double servo2 = 1.5707963267948966192313216916397514420985846996875529 - (BaseToL2 + ThetaA);
         double L2ToL3 = Math.acos(((L3Sq+L2Sq-MSq)/(2*L2*L3)));
+        double servo3 = ((2*1.5707963267948966192313216916397514420985846996875529) - L2ToL3);
         double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
+        double servo4 = ((2*1.5707963267948966192313216916397514420985846996875529) - (Wrist + ThetaB));
 
         //This is just a test right now will need to create a state machine that uses this
-        loadAngles(angle, BaseToL2, L2ToL3, Wrist);
-        closeGripper();
+        System.out.println("Angles before contraining:");
+        System.out.println(servo2);
+        System.out.println(servo3);
+        System.out.println(servo4);
+        loadAngles(angle, servo2, servo3, servo4);
+        openGripper();
         cc.check(angles);
     }
     

@@ -26,9 +26,6 @@ public class ConstraintCheck
     }
 
     double[] check(double[] angles){ 
-        for (int i = 0; i < 6; i++){
-            angles[i] = angles[i] / 10;
-        }
     
         //Create matrix to hold current location of parts
 	    double curXYZ[][] = new double[4][4];
@@ -136,6 +133,7 @@ public class ConstraintCheck
 		    angles[5] = angles_old[5];
 	    }
 	
+	    System.out.println("Angles after constraining");
 	    for (int i = 0; i < 6; i++){
 	        System.out.println(angles[i]);
 	    }
