@@ -15,7 +15,13 @@ public class LCMSend
 {
     LCM lcm;
 
-    public LCMSend(){}
+    public LCMSend(){
+        try{
+            lcm = new LCM();
+        } catch (Exception e){
+        
+        }
+    }
     
     void send(double[] angles){
 	long now = TimeUtil.utime();

@@ -19,9 +19,9 @@ import april.*;
 // Should take in a location an angle and distance and outputs an array //
 // of six angle values for the arm                                      //
 //======================================================================//
-public class StateMachine
+public class StateMachine implements LCMSubscriber
 {
-    
+
     //Arm Length Constants
     static double L1 = 12; //7.5cm + 4.5cm for Base + Pivot1
     static double L2 = 10.5;
@@ -29,18 +29,46 @@ public class StateMachine
     static double L4 = 8.0;
     //This doesn't seem right but I'm just going by the dims
     static double L5 = 19.5; //8 + 2 + 8.5 + height of claw above the board
-    
+
+    //Gripper Constants
+    static double GRIPPER_OPEN = -30.0;
+    static double GRIPPER_CLOSED = 0.0;
+
     double armSubBase;
     double L2Sq;
     double L3Sq;
+
+    double angles[] = new double[6];
+    double actual_angles[] = new double[6];
+    ConstraintCheck cc = new ConstraintCheck();
 
     public StateMachine()
     {
         double armSubBase = L4 - L1;
         double L2Sq = L2 * L2;
         double L3Sq = L3 * L3;
+        for (int i = 0; i < 6; i++){
+            angles[i] = 0;
+        }
     }
-    
+
+    protected void loadAngles(double angle, double BaseToL2, double L2ToL3, double Wrist){
+        angles[0] = angle;
+        angles[1] = BaseToL2;
+        angles[2] = L2ToL3;
+        angles[3] = Wrist;
+    }
+
+    protected void openGripper() {
+        angles[5] = GRIPPER_OPEN;
+        //TODO: Add some feedback that checks when the ball is actually open
+    }
+
+    protected void closeGripper() {
+        angles[5] = GRIPPER_CLOSED;
+        //TODO: Add some feedback that checks when gripper is actually closed
+    }
+
     public void pickUp90(double angle, double armDistance){
         //Do angle calculations (this is explained in the README)
 
@@ -48,19 +76,28 @@ public class StateMachine
 
         double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
         double MSq = M * M;
-        double ThetaA = Math.asin((armSubBase-M));
+        double ThetaA = Math.asin((armSubBase/M));
         double ThetaB = Math.asin((armDistance/M));
 
         double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
+        double servo2 = 1.5707963267948966192313216916397514420985846996875529 - (BaseToL2 + ThetaA);
         double L2ToL3 = Math.acos(((L3Sq+L2Sq-MSq)/(2*L2*L3)));
+        double servo3 = ((2*1.5707963267948966192313216916397514420985846996875529) - L2ToL3);
         double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
+        double servo4 = ((2*1.5707963267948966192313216916397514420985846996875529) - (Wrist + ThetaB));
 
         //This is just a test right now will need to create a state machine that uses this
-        //rd.update(0.0, BaseToL2, L2ToL3, Wrist);
+        System.out.println("Angles before contraining:");
+        System.out.println(servo2);
+        System.out.println(servo3);
+        System.out.println(servo4);
+        loadAngles(angle, servo2, servo3, servo4);
+        openGripper();
+        cc.check(angles);
     }
-    
+
     public void pickUpStraight(double angles){}
-    
+
     //======================================================================//
     // ballPickUp()                                                         //
     // Determins how far a ball is away from the arm. Depending on it's     //
@@ -92,4 +129,19 @@ public class StateMachine
 		}*/
 	}
 
+
+    @Override
+    public void messageReceived(LCM lcm, String channel, LCMDataInputStream dins)
+    {
+        try {
+            dynamixel_status_list_t arm_status = new dynamixel_status_list_t(dins);
+            /* access positions using arm_status.statuses[i].position_radians */
+            for (int i = 0; i < 6; i++){
+                actual_angles[i] = arm_status.statuses[i].position_radians;
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
