@@ -43,6 +43,9 @@ public class BallMatch implements MouseListener
     //Template creation globals
     boolean clicked, getTemplate, onScreen, setTemplate = true, first = true;
     int X1 = 0, X2 = 1, Y1 = 0, Y2 = 1;
+	int sMaxX, sMinX, sMaxY, sMinY;
+	int edge = 12;
+
 
     //Error Bar Variables
     double error = 0;
@@ -230,8 +233,8 @@ public class BallMatch implements MouseListener
         error = 0;
         boolean nskiped = true;
 
-        for (int y = 0; y < im.getHeight() - tsizeY; y += scalefactor){
-            for (int x = 0; x < im.getWidth() - tsizeX; x += scalefactor){
+        for (int y = sMinY; y < sMaxY - tsizeY; y += scalefactor){
+            for (int x = sMinX; x < sMaxX - tsizeX; x += scalefactor){
                 for (int ty = 0; ty < tsizeY; ty += scalefactor) {
                   for (int tx = 0; tx < tsizeX; tx += scalefactor) {
                         int templateRGB = template.getRGB(X1 + tx, Y1 + ty);
@@ -377,6 +380,42 @@ public class BallMatch implements MouseListener
 			{0,					0,					1			 }};
 
 		calibration = new Matrix(calibrationArray);
+
+		//setup the range though which template matching should happen
+		if(CalPt1.x < CalPt4.x){
+			sMinX = (int)CalPt1.x - edge;
+		}
+		else{
+			sMinX = (int)CalPt4.x - edge;
+		}
+
+		if(CalPt2.x > CalPt3.x){
+			sMaxX = (int)CalPt2.x + edge;
+		}
+		else{
+			sMaxX = (int)CalPt3.x + edge;
+		}
+
+		if(CalPt1.y < CalPt2.y){
+			sMinY = (int)CalPt1.y - edge;
+		}
+		else{
+			sMinY = (int)CalPt2.y - edge;
+		}
+
+		if(CalPt3.y > CalPt4.y){
+			sMaxY = (int)CalPt3.y + edge;
+		}
+		else{
+			sMaxY = (int)CalPt4.y + edge;
+		}
+System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
+System.out.println("Calibrating1 X: " + CalPt1.x  + " Y: " + CalPt1.y);
+
+System.out.println(sMaxX + " "+ sMinX + " " + sMaxY + " "+ sMinY);
+
+
+
 	}
 
 
