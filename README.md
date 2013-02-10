@@ -20,6 +20,27 @@ Code info:
 RobotArmGUI.java: For manuel control of arm
 RobotOperator.java Class to run RobotArmguI.java
 
+BallMatch.java: The master class that does template matching and calls all necessary classes
+
+StateMachine.java:  Contains pickUp90 and pickUpStraight state machines for arm
+    Methods: pickUp90(double armDistance, double angle); (returns array of 6 servo angles)
+             pickUpStraight(double armDistance, double angle); (returns array of  6 servo angles)
+             
+ConstraintCheck.java: Checks constraints and makes call to LCMSend.
+    Methods: check(double[] angles); (returns array of 6 servo angles)
+    
+LCMSend.java: Sends out servo angles to the robot
+    Methods: send(double[] angles);  
+    
+This is an example of how the objects would call each other:
+BallMatch.java
+  |
+  |->StateMachine.ballPickUp(still need to figure out these params)
+        |
+        |->ConstraintCheck.check(angles)
+                |
+                |->LCMSend.send(angles)
+
 
 Arm Dimensions:
 Base:
