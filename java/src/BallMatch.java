@@ -18,6 +18,17 @@ import java.util.Vector;
 public class BallMatch implements MouseListener
 {
 
+    //Arm Length Constants
+    static double L1 = 12; //7.5cm + 4.5cm for Base + Pivot1
+    static double L2 = 10.5;
+    static double L3 = 10.0;
+    static double L4 = 8.0;
+    //This doesn't seem right but I'm just going by the dims
+    static double L5 = 18.5; //8 + 2 + 8.5
+
+    //For sending the robot commands
+    RobotDriver rd;
+
     //Image Globals
     ImageSource is;
     BufferedImage template = null;
@@ -85,6 +96,8 @@ public class BallMatch implements MouseListener
         jf.setVisible(true);
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jim.addMouseListener(this);
+
+        rd = new RobotDriver();
     }
 
 
@@ -376,7 +389,26 @@ public class BallMatch implements MouseListener
 		return location;
 	}
 
-	public void pickUp90(Location location){}
+	public void pickUp90(Location location, double armDistance){
+        //Do angle calculations (this is explained in the README)
+
+        //These angle calcs can probably be moved up into constants because they'll never change
+        double armSubBase = L4 - L1;
+        double L2Sq = L2 * L2;
+        double L3Sq = L3 * L3;
+
+        double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
+        double MSq = M * M;
+        double ThetaA = Math.asin((armSubBase-M));
+        double ThetaB = Math.asin((armDistance/M));
+
+        double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
+        double L2ToL3 = Math.acos(((L3Sq+L2Sq-MSq)/(2*L2*L3)));
+        double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
+
+        //This is just a test right now will need to create a state machine that uses this
+        rd.update(0.0, BaseToL2, L2ToL3, Wrist);
+    }
 
 	public void pickUpStraight(Location location){}
 
@@ -399,7 +431,7 @@ public class BallMatch implements MouseListener
 			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2));
 
 			if(armDistance < Range1){
-				pickUp90(curBall);
+				pickUp90(curBall, armDistance);
 			}
 			else if (armDistance < Range2){
 				pickUpStraight(curBall);

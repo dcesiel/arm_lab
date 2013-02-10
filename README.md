@@ -16,6 +16,9 @@ To start the arm driver:
     java -cp "$CLASSPATH:/home/MYUSERNAME/arm_lab/java/armlab.jar" armlab.arm.ArmDriver -d /dev/ttyUSB[x]
 
 
+Code info:
+RobotArmGUI.java: For manuel control of arm
+RobotOperator.java Class to run RobotArmguI.java
 
 
 Arm Dimensions:
