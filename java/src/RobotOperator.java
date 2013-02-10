@@ -11,23 +11,18 @@ import april.vis.*;
 import armlab.lcmtypes.*;
 import april.*;
 
-
+//======================================================================//
+// RobotOperator class                                                  //
+// A class for testing the different robot modules                      //
+//                                                                      //
+//Use:  -gui for running gui                                            //
+//      -90 for running 90 state machine                                //
+//======================================================================//
 public class RobotOperator
 {
-    private static double MAX_TRIANGLE_DISTANCE = 18.5;
-
-    VisWorld vw = new VisWorld();
-    VisLayer vl  = new VisLayer(vw);
-    VisCanvas vc = new VisCanvas(vl);
-    ParameterGUI pg = new ParameterGUI();
-    double theta1_prev = 0;
-    double theta2_prev = 0;
-    double theta3_prev = 0;
-    double theta4_prev = 0;
-    double theta5_prev = 0;
-    double theta6_prev = 0;
 
     static RobotArmGUI gui;
+    static StateMachine stateMachine;
 
     public RobotOperator()
     {
@@ -37,8 +32,26 @@ public class RobotOperator
 
     public static void main(String[] args)
     {
-        gui = new RobotArmGUI();
-        gui.update();
+        if (args.length > 0 && args[0].equals("-gui")){
+            gui = new RobotArmGUI();
+            gui.update();
+        }
+        else if (args.length > 0 && args[0].equals("-90")){
+            //Call this using RobotOperator -gui angleVal distanceVal
+            stateMachine = new StateMachine();
+            if (args.length > 2){
+                Double angle = Double.valueOf(args[1]);
+                Double distance = Double.valueOf(args[2]);
+                stateMachine.pickUp90(angle, distance);
+            }
+            else {
+                System.out.println("Please format like this: RobotOperator -gui angleVal distanceVal");
+            }
+        }
+        else {
+            System.out.println("Bad parameter please try: -gui or -90");
+        }
+            
     }
 
 }
