@@ -25,6 +25,12 @@ public class BallMatch implements MouseListener
     static double L4 = 8.0;
     //This doesn't seem right but I'm just going by the dims
     static double L5 = 18.5; //8 + 2 + 8.5
+    
+    //Bucket range constants
+    static double XMIN = 16.0;
+    static double XMAX = 32.0;
+    static double YMIN = -8.0;
+    static double YMAX = 8.0;
 
     //For sending the robot commands
     RobotDriver rd;
@@ -293,24 +299,38 @@ public class BallMatch implements MouseListener
 			temp.x = totalX / count;
 			temp.y = totalY / count;
 
-			totalX = 0;
-			totalY = 0;
-			count = 0;
+            if (outsideBucket(temp)){
+			    totalX = 0;
+			    totalY = 0;
+			    count = 0;
 
-			bound[0] = (int)temp.x -1;
-			bound[1] = (int)temp.y -1;
-			bound[2] = (int)temp.x + 1;
-			bound[3] = (int)temp.y+1;
-            mark(im, bound, 0xff00ff00);
+			    bound[0] = (int)temp.x -1;
+			    bound[1] = (int)temp.y -1;
+			    bound[2] = (int)temp.x + 1;
+			    bound[3] = (int)temp.y+1;
+                mark(im, bound, 0xff00ff00);
 
 
-			//add code to optimize the order of balls that should be retrived
-			located.add(temp);
+			    //add code to optimize the order of balls that should be retrived
+			    located.add(temp);
+			}
 		}
     }
 
 //======================================================================//
-// calibrate()                         ecoding stro                                 //
+// outsideBucket()                                                      //
+// Returns true outside the range of the bucket                         //
+//======================================================================//    
+    public boolean outsideBucket(Location l){
+        if ((l.x > XMIN) && (l.x < XMAX))
+            return false;
+        if ((l.y > YMIN) && (l.y < YMAX))
+            return false;
+        return true;
+    }
+
+//======================================================================//
+// calibrate()                         ecoding stro                     //
 // Uses the affine transform to map the pixels to the cordiates of the  //
 // board. Stores solution in calibration.                               //
 //======================================================================//

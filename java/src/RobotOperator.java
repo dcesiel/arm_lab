@@ -22,11 +22,10 @@ public class RobotOperator
 {
 
     static RobotArmGUI gui;
-    static StateMachine stateMachine;
+    static StateMachine stateMachine = new StateMachine();
 
     public RobotOperator()
     {
-        
         
     }
 
@@ -38,10 +37,11 @@ public class RobotOperator
         }
         else if (args.length > 0 && args[0].equals("-90")){
             //Call this using RobotOperator -gui angleVal distanceVal
-            stateMachine = new StateMachine();
             if (args.length > 2){
                 Double angle = Double.valueOf(args[1]);
                 Double distance = Double.valueOf(args[2]);
+                System.out.println(angle);
+                System.out.println(distance);
                 stateMachine.pickUp90(angle, distance);
             }
             else {

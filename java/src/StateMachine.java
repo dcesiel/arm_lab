@@ -30,15 +30,42 @@ public class StateMachine
     //This doesn't seem right but I'm just going by the dims
     static double L5 = 19.5; //8 + 2 + 8.5 + height of claw above the board
     
+    //Gripper Constants
+    static double GRIPPER_OPEN = -30.0;
+    static double GRIPPER_CLOSED = 0.0;
+    
     double armSubBase;
     double L2Sq;
     double L3Sq;
+    
+    double angles[] = new double[6];
+    ConstraintCheck cc = new ConstraintCheck();
 
     public StateMachine()
     {
         double armSubBase = L4 - L1;
         double L2Sq = L2 * L2;
         double L3Sq = L3 * L3;
+        for (int i = 0; i < 6; i++){
+            angles[i] = 0;
+        }
+    }
+    
+    protected void loadAngles(double angle, double BaseToL2, double L2ToL3, double Wrist){
+        angles[0] = angle;
+        angles[1] = BaseToL2;
+        angles[2] = L2ToL3; 
+        angles[3] = Wrist;
+    }
+    
+    protected void openGripper() {
+        angles[5] = GRIPPER_OPEN;
+        //TODO: Add some feedback that checks when the ball is actually open
+    }
+    
+    protected void closeGripper() {
+        angles[5] = GRIPPER_CLOSED;
+        //TODO: Add some feedback that checks when gripper is actually closed    
     }
     
     public void pickUp90(double angle, double armDistance){
@@ -56,7 +83,9 @@ public class StateMachine
         double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
 
         //This is just a test right now will need to create a state machine that uses this
-        //rd.update(0.0, BaseToL2, L2ToL3, Wrist);
+        loadAngles(angle, BaseToL2, L2ToL3, Wrist);
+        closeGripper();
+        cc.check(angles);
     }
     
     public void pickUpStraight(double angles){}
