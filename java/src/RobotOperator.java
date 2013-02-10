@@ -22,6 +22,7 @@ public class RobotOperator
 {
 
     static RobotArmGUI gui;
+    static StateMachine stateMachine;
 
     public RobotOperator()
     {
@@ -36,7 +37,16 @@ public class RobotOperator
             gui.update();
         }
         else if (args.length > 0 && args[0].equals("-90")){
-            
+            //Call this using RobotOperator -gui angleVal distanceVal
+            stateMachine = new StateMachine();
+            if (args.length > 2){
+                Double angle = Double.valueOf(args[1]);
+                Double distance = Double.valueOf(args[2]);
+                stateMachine.pickUp90(angle, distance);
+            }
+            else {
+                System.out.println("Please format like this: RobotOperator -gui angleVal distanceVal");
+            }
         }
         else {
             System.out.println("Bad parameter please try: -gui or -90");
