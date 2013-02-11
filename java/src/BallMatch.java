@@ -46,7 +46,7 @@ public class BallMatch implements MouseListener
     double error = 0;
     double errorK = 80;
     int scalefactor = 2;
-    int pRange = 20;
+    int pRange = 28;
 
     //Calibration Globals
     boolean calibrate = false, notcalibrated = true;
@@ -216,14 +216,14 @@ public class BallMatch implements MouseListener
         final ImageSourceFormat fmt = is.getCurrentFormat();
 
         is.start();
-        
+
         // read a frame
         byte buf[] = is.getFrame().data;
             if (buf == null)
                 return;
 
         is.stop();
-        
+
         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
         errorK = pg.gd("errork");
@@ -317,7 +317,8 @@ public class BallMatch implements MouseListener
             double armDistance = Math.sqrt(Math.pow(tempb.x, 2) + Math.pow(tempb.y, 2));
 
             if(armDistance < Range2){
-                if(! (tempb.x < 0 & ( tempb.y < 9 & tempb.y > -9))){
+                if(! (tempb.x < -10 & ( tempb.y < 9 & tempb.y > -9))){
+                    if( ! ((tempb.x < 4 & tempb.x > -4) & (tempb.y < 4 & tempb.y > -4))){
                     bound[0] = (int)temp.x -1;
                     bound[1] = (int)temp.y -1;
                     bound[2] = (int)temp.x + 1;
@@ -326,9 +327,9 @@ public class BallMatch implements MouseListener
 
                     board.r = armDistance;
                     board.theta = Math.atan2( tempb.y, tempb.x);
-                    System.out.println("YYY " + board.r + " " + board.theta);
-     
+                    System.out.println("YYY " + board.r + " " + board.theta + " " + located.size());
                     located.add(board);
+                    }
                 }
             }
         }
@@ -448,19 +449,21 @@ public class BallMatch implements MouseListener
 //======================================================================//
     public void ballPickUp(){
 
+        matchBall();
+
         while(true){
-        
+            /*
             is.start();
-            
+
             for(int i = 0; i < 10; i++){
                 byte buf[] = is.getFrame().data;
             }
-            
+
             is.stop();
             System.out.println("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP");
             matchBall();
 
-            screenOutput();
+            screenOutput();*/
 
             if( located.isEmpty()){
                 System.out.println("No more balls found!");
@@ -472,12 +475,10 @@ public class BallMatch implements MouseListener
                 curBall = located.get(0);
                 System.out.println("XXXXXXX" + located.size());
                 sm.startMachine(-curBall.theta, curBall.r/10);
-                
+
                 located.remove(0);
-                if(!located.isEmpty()){
-                    located.remove(located.size()-1);
-                }
-            }         
+
+            }
         }
     }
 
@@ -491,11 +492,11 @@ public class BallMatch implements MouseListener
         final ImageSourceFormat fmt = is.getCurrentFormat();
 
        is.start();
-       
+
         byte buf[] = is.getFrame().data;
             if (buf == null)
                 return;
-                
+
         is.stop();
 
         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
@@ -533,9 +534,9 @@ public class BallMatch implements MouseListener
                     getTemplate = true;
                     // read a frame
                     is.start();
-                    
+
                     byte buf[] = is.getFrame().data;
-                    
+
                     is.stop();
                     if (buf != null){
                         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
@@ -581,6 +582,7 @@ public class BallMatch implements MouseListener
             System.out.println("testing");
         }
 
+        located.removeAllElements();
         while(!run){
             System.out.println("waiting");
         }

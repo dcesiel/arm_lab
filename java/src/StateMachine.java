@@ -61,7 +61,7 @@ public class StateMachine implements LCMSubscriber
             angles[i] = 0;
         }
         angles[5] = GRIPPER_OPEN;
-        send.send(angles);
+        send.sendS(angles);
     }
 
     protected void loadAngles(double angle, double BaseToL2, double L2ToL3, double Wrist){
@@ -70,7 +70,7 @@ public class StateMachine implements LCMSubscriber
         angles[2] = L2ToL3;
         angles[3] = Wrist;
 
-        send.send(angles);
+        send.sendS(angles);
         waitUntilAngle(angle, 0);
         waitUntilAngle(BaseToL2, 1);
         waitUntilAngle(L2ToL3, 2);
@@ -79,7 +79,7 @@ public class StateMachine implements LCMSubscriber
 
     protected void swingArm(double angle){
         angles[0] = angle;
-        send.send(angles);
+        send.sendF(angles);
         System.out.println("Swing entered");
         waitUntilAngle(angle, 0);
         System.out.println("Swing asdfasdfd");
@@ -88,47 +88,47 @@ public class StateMachine implements LCMSubscriber
     public void waitUntilAngle(double angle, int index){
         while (!((actual_angles[index] < angle+withinConstant) && (actual_angles[index] > angle-withinConstant))) {
 
-            System.out.println(actual_angles[index]);
+            int a = index;
         }
     }
 
     protected void openGripper() {
         angles[5] = GRIPPER_OPEN;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(GRIPPER_OPEN, 5);
     }
 
     protected void closeGripper() {
         angles[5] = GRIPPER_CLOSED;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(GRIPPER_CLOSED, 5);
     }
 
     protected void armUpStr() {
         angles[1] = 0;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[1], 1);
         
         angles[3] = -.8;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[3], 3);
         
         angles[2] = -1.4;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[2], 2);
     }
 
     protected void armUp90() {
         angles[1] = 0;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[1], 1);
         
         angles[3] = -.8;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[3], 3);
         
         angles[2] = -1.4;
-        send.send(angles);
+        send.sendF(angles);
         waitUntilAngle(angles[2], 2);
     }
 
@@ -152,7 +152,7 @@ public class StateMachine implements LCMSubscriber
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
         }
-        send.send(angles);
+        send.sendF(angles);
     }
 
     public void pickUp90(double angle, double armDistance){
