@@ -22,7 +22,7 @@ import april.*;
 public class StateMachine implements LCMSubscriber
 {
 
-    static double withinConstant = 0.05;
+    static double withinConstant = 0.04;
 
     //Arm Length Constants
     static double L1 = 1.2; //7.5cm + 4.5cm for Base + Pivot1
@@ -33,7 +33,7 @@ public class StateMachine implements LCMSubscriber
     static double L4 = 1.95; //8 + 2 + 8.5 + height of claw above the board
 
     //Gripper Constants
-    static double GRIPPER_OPEN = 1.2;
+    static double GRIPPER_OPEN = 1.047;
     static double GRIPPER_CLOSED = 1.57;
 
     static double RANGE1 = 1.9;
@@ -60,7 +60,7 @@ public class StateMachine implements LCMSubscriber
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
         }
-        angles[5] = GRIPPER_CLOSED;
+        angles[5] = GRIPPER_OPEN;
         send.send(angles);
     }
 
@@ -109,13 +109,13 @@ public class StateMachine implements LCMSubscriber
         send.send(angles);
         waitUntilAngle(angles[1], 1);
         
-        angles[2] = -1.54;
-        send.send(angles);
-        waitUntilAngle(angles[2], 2);
-        
-        angles[3] = -.75;
+        angles[3] = -.8;
         send.send(angles);
         waitUntilAngle(angles[3], 3);
+        
+        angles[2] = -1.4;
+        send.send(angles);
+        waitUntilAngle(angles[2], 2);
     }
 
     protected void armUp90() {
@@ -123,13 +123,13 @@ public class StateMachine implements LCMSubscriber
         send.send(angles);
         waitUntilAngle(angles[1], 1);
         
-        angles[2] = -1.54;
-        send.send(angles);
-        waitUntilAngle(angles[2], 2);
-        
-        angles[3] = -.75;
+        angles[3] = -.8;
         send.send(angles);
         waitUntilAngle(angles[3], 3);
+        
+        angles[2] = -1.4;
+        send.send(angles);
+        waitUntilAngle(angles[2], 2);
     }
 
     protected void returnBallStr(double swing){
