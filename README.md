@@ -14,6 +14,10 @@ To get ttyUSB:
 To start the arm driver:
 
     java -cp "$CLASSPATH:/home/MYUSERNAME/arm_lab/java/armlab.jar" armlab.arm.ArmDriver -d /dev/ttyUSB[x]
+    
+To start listening to the arm location:
+
+    java -cp "$CLASSPATH:/home/MYUSERNAME/arm_lab/java/arlstaff.jar" arlstaff.arm.ArmController -d /dev/ttyUSB[x]
 
 
 Code info:
