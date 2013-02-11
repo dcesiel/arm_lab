@@ -84,7 +84,7 @@ public class StateMachine implements LCMSubscriber
         System.out.println("Swing asdfasdfd");
     }
     
-    protected void armUp(double Wrist){
+    protected void armDown(double Wrist){
         angles[1] = BASESWING;
         angles[2] = L2TOL3SWING;
         angles[3] = Wrist;
@@ -118,19 +118,30 @@ public class StateMachine implements LCMSubscriber
         waitUntilAngle(GRIPPER_CLOSED, 5);
     }
     
-    protected void armUp() {
-        angles[2] += .4;
+    protected void armUpStr() {
+        angles[2] += .5; //1.5
         send.send(angles);
         waitUntilAngle(angles[2], 2);
     }
     
-    protected void returnBall(double swing){
-        armUp(-1.3);
+    protected void armUp90() {
+        angles[3] += .5;
+        send.send(angles);
+        waitUntilAngle(angles[3], 3);
+    }
+    
+    protected void returnBallStr(double swing){
+        armUpStr();
         
-        if(swing < 0)
-            swingArm(-3.14);
-        else
-            swingArm(3.14);
+        swingArm(3.14);
+            
+        openGripper();
+    }
+    
+    protected void returnBall90(double swing){
+        armUp90();
+        
+        swingArm(3.14);
             
         openGripper();
     }
@@ -164,14 +175,14 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo4);
         
         openGripper();
-        armUp(-servo4);
+        armDown(-servo4);
       
-        swingArm(angle+.1);
+        swingArm(angle-.2);
         loadAngles(angles[0], -servo2, -servo3, -servo4);
         
         closeGripper();
         
-        returnBall(angle); 
+        returnBall90(angle); 
         
     }
 
@@ -200,16 +211,14 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo4);
         
         openGripper();
-        armUp(-servo4);
+        armDown(-servo4);
         
-        swingArm(angle + 0.5);
-        loadAngles(angle, -servo2 + .13, -servo3, -servo4);
+        swingArm(angle - 0.2);
+        loadAngles(angles[0], -servo2 + .13, -servo3, -servo4);
         
         closeGripper();
         
-        armUp();
-        
-        returnBall(angle);
+        returnBallStr(angle);
 
     }
 
