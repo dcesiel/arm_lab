@@ -36,7 +36,7 @@ public class StateMachine implements LCMSubscriber
     static double GRIPPER_OPEN = 1.047;
     static double GRIPPER_CLOSED = 1.57;
     
-    static double RANGE1 = 2.1;
+    static double RANGE1 = 1.9;
 	static double RANGE2 = 3.9;
 	
 	//Swing position constants
