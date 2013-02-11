@@ -447,13 +447,16 @@ public class BallMatch implements MouseListener
                 return;
             }
             while( ! located.isEmpty()){
+     
                 rTheta curBall = new rTheta();
                 curBall = located.get(0);
 
-                sm.startMachine(curBall.theta, curBall.r/10);
+                System.out.println("XXXXXXXXXXXXX!: " + curBall.theta + " " + curBall.r/10 );
+                sm.startMachine(-curBall.theta, curBall.r/10);
 
                 located.remove(0);
             }
+            sm.stop();
         }
     }
 
