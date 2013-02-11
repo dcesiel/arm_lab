@@ -63,6 +63,7 @@ public class BallMatch implements MouseListener
     double Range1 = 21;
     double Range2 = 37;
 
+    boolean test = true;
 
     //GUI Gloabals
     JFrame jf = new JFrame();
@@ -94,6 +95,7 @@ public class BallMatch implements MouseListener
         pg.addButtons("getTemplateButton", "Grab new template");
         pg.addButtons("acceptTemplate", "Accept Template");
         pg.addButtons("calibrate", "Calibrate");
+        pg.addButtons("test", "test done");
         pg.addButtons("start", "Start");
 
         jim.setFit(true);
@@ -252,13 +254,19 @@ public class BallMatch implements MouseListener
                     int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
                     mark(im, bounds, 0xff0000ff);
                     Location loc = new Location();
-                    loc.x = (x + x + X2 - X1)/2;
-                    loc.y = (y +y + Y2 - Y1)/2;
-                    found.add(loc);
+                    if(!test){
+                        loc.x = (x + x + X2 - X1)/2;
+                        loc.y = (y +y + Y2 - Y1)/2;
+                        found.add(loc);
+                    }
                 }
                 error = 0;
                 nskiped = true;
             }
+        }
+
+        if(test){
+            screenOutput();
         }
 
         int X = 0, Y = 0, totalX = 0, totalY = 0, count = 0;
@@ -522,10 +530,15 @@ public class BallMatch implements MouseListener
                     System.out.println("Calibration Time");
                     calibrate = true;
                 }
+                if (name.equals("test")){
+                    System.out.println("Running Time");
+                    test = false;
+                }
                 if (name.equals("start")){
                     System.out.println("Running Time");
                     run = true;
                 }
+
             }
         });
 
@@ -543,8 +556,15 @@ public class BallMatch implements MouseListener
         calibrate();
 
         //Waiting to Start
-        System.out.println("Waiting to Start");
-        while(!run){System.out.println("SART" + run);}
+        while(test){
+            matchBall();
+            System.out.println("testing");
+        }
+
+        while(!run){
+            System.out.println("waiting");
+        }
+
 
         //Begin picking up balls
         while(run) {
@@ -557,7 +577,7 @@ public class BallMatch implements MouseListener
     public static void main(String args[]) throws IOException
     {
         ArrayList<String> urls = ImageSource.getCameraURLs();
-        
+
         String url = null;
 
         if (urls.size()==1)
