@@ -22,7 +22,7 @@ import april.*;
 public class StateMachine implements LCMSubscriber
 {
     
-    static double withinConstant = 0.0375;
+    static double withinConstant = 0.05;
 
     //Arm Length Constants
     static double L1 = 1.2; //7.5cm + 4.5cm for Base + Pivot1
@@ -134,6 +134,13 @@ public class StateMachine implements LCMSubscriber
             
         openGripper();
     }
+    
+    public void stop(){
+        for (int i = 0; i < 6; i++){
+            angles[i] = 0;
+        }
+        send.send(angles);
+    }
 
     public void pickUp90(double angle, double armDistance){
         //Do arm location calculations
@@ -159,8 +166,8 @@ public class StateMachine implements LCMSubscriber
         openGripper();
         armUp(-servo4);
       
-        swingArm(angle + 0.1);
-        loadAngles(angle, -servo2, -servo3, -servo4);
+        swingArm(angle+.1);
+        loadAngles(angles[0], -servo2, -servo3, -servo4);
         
         closeGripper();
         
@@ -195,7 +202,7 @@ public class StateMachine implements LCMSubscriber
         openGripper();
         armUp(-servo4);
         
-        swingArm(angle + 0.1);
+        swingArm(angle + 0.5);
         loadAngles(angle, -servo2 + .13, -servo3, -servo4);
         
         closeGripper();
@@ -212,7 +219,10 @@ public class StateMachine implements LCMSubscriber
     // different pick functions are called.                                 //
     //======================================================================//
 	public void startMachine(double angle, double armDistance){
-	    if(armDistance < RANGE1){
+	    if(armDistance < .4){
+	        return;
+	    }
+	    else if(armDistance < RANGE1){
 			pickUp90(angle+0.1, armDistance);
 		}
 		else if (armDistance < RANGE2){
@@ -224,7 +234,6 @@ public class StateMachine implements LCMSubscriber
 			System.out.print(" Angle: ");
 			System.out.print(angle);
 		}
-		while (true){}
 	}
 
 
