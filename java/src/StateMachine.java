@@ -21,6 +21,8 @@ import april.*;
 //======================================================================//
 public class StateMachine implements LCMSubscriber
 {
+    
+    static double withinConstant = 0.0375;
 
     //Arm Length Constants
     static double L1 = 1.2; //7.5cm + 4.5cm for Base + Pivot1
@@ -34,16 +36,21 @@ public class StateMachine implements LCMSubscriber
     static double GRIPPER_OPEN = 1.047;
     static double GRIPPER_CLOSED = 1.57;
     
-    static double RANGE1 = 21;
-	static double RANGE2 = 37;
+    static double RANGE1 = 2.1;
+	static double RANGE2 = 3.9;
+	
+	//Swing position constants
+	static double BASESWING = 0.0;
+	static double L2TOL3SWING = -1.2;
 
     double armSubBase;
     double L2Sq;
     double L3Sq;
 
     double angles[] = new double[6];
-    double actual_angles[] = new double[6];
+    volatile double actual_angles[] = new double[6];
     ConstraintCheck cc = new ConstraintCheck();
+    LCMSend send = new LCMSend();
 
     public StateMachine()
     {
@@ -53,8 +60,7 @@ public class StateMachine implements LCMSubscriber
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
         }
-        //Put the arm in the up position
-        //cc.check(angles);
+        send.send(angles);
     }
 
     protected void loadAngles(double angle, double BaseToL2, double L2ToL3, double Wrist){
@@ -62,28 +68,80 @@ public class StateMachine implements LCMSubscriber
         angles[1] = BaseToL2;
         angles[2] = L2ToL3;
         angles[3] = Wrist;
+        
+        send.send(angles);
+        waitUntilAngle(angle, 0);
+        waitUntilAngle(BaseToL2, 1);
+        waitUntilAngle(L2ToL3, 2);
+        waitUntilAngle(Wrist, 3);
+    }
+    
+    protected void swingArm(double angle){
+        angles[0] = angle;
+        send.send(angles);
+        System.out.println("Swing entered");
+        waitUntilAngle(angle, 0);
+        System.out.println("Swing asdfasdfd");
+    }
+    
+    protected void armUp(double Wrist){
+        angles[1] = BASESWING;
+        angles[2] = L2TOL3SWING;
+        angles[3] = Wrist;
+        //cc.check(angles);
+        send.send(angles);
+        System.out.println("Angles sent");
+        waitUntilAngle(BASESWING, 1);
+        System.out.println("First while executed");
+        waitUntilAngle(L2TOL3SWING, 2);
+        System.out.println("Second while executed");
+        waitUntilAngle(Wrist, 3);
+        System.out.println("Third while executed");
+    }
+    
+    public void waitUntilAngle(double angle, int index){
+        while (!((actual_angles[index] < angle+withinConstant) && (actual_angles[index] > angle-withinConstant))) {
+            
+            //System.out.println(actual_angles[index]);
+        }
     }
 
     protected void openGripper() {
         angles[5] = GRIPPER_OPEN;
-        //TODO: Add some feedback that checks when the ball is actually open
+        send.send(angles);
+        waitUntilAngle(GRIPPER_OPEN, 5);
     }
 
     protected void closeGripper() {
         angles[5] = GRIPPER_CLOSED;
-        //TODO: Add some feedback that checks when gripper is actually closed
+        send.send(angles);
+        waitUntilAngle(GRIPPER_CLOSED, 5);
+    }
+    
+    protected void armUp() {
+        angles[2] += .4;
+        send.send(angles);
+        waitUntilAngle(angles[2], 2);
+    }
+    
+    protected void returnBall(double swing){
+        armUp(-1.3);
+        
+        if(swing < 0)
+            swingArm(-3.14);
+        else
+            swingArm(3.14);
+            
+        openGripper();
     }
 
     public void pickUp90(double angle, double armDistance){
+        //Do arm location calculations
+        System.out.println("PickUp90");
         double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
-	    System.out.println("M " + M);	
         double MSq = M * M;
-	    System.out.println("SubBase " + armSubBase);
-	    System.out.println("M^2 " + MSq);
         double ThetaA = Math.asin((armSubBase/M));
-	    System.out.println("ThetaA " + ThetaA);
         double ThetaB = Math.asin((armDistance/M));
-	    System.out.println("ThetaB " + ThetaB);
 
         double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
         double servo2 = 1.57 - (BaseToL2 + ThetaA);
@@ -97,12 +155,21 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo2);
         System.out.println(servo3);
         System.out.println(servo4);
-        loadAngles(angle, -servo2, servo3, -servo4);
+        
         openGripper();
-        cc.check(angles);
+        armUp(-servo4);
+      
+        swingArm(angle + 0.1);
+        loadAngles(angle, -servo2, -servo3, -servo4);
+        
+        closeGripper();
+        
+        returnBall(angle); 
+        
     }
 
     public void pickUpStraight(double angle, double armDistance){
+        System.out.println("Straight");
         double M = Math.sqrt((armDistance*armDistance)+(L1*L1));
         double MSq = M * M;
 	    double L2L3Sq = (L2+L3)*(L2+L3);
@@ -124,9 +191,19 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo2);
         System.out.println(servo3);
         System.out.println(servo4);
-        loadAngles(angle, -servo2, servo3, -servo4);
+        
         openGripper();
-        cc.check(angles);
+        armUp(-servo4);
+        
+        swingArm(angle + 0.1);
+        loadAngles(angle, -servo2 + .13, -servo3, -servo4);
+        
+        closeGripper();
+        
+        armUp();
+        
+        returnBall(angle);
+
     }
 
     //======================================================================//
@@ -136,10 +213,10 @@ public class StateMachine implements LCMSubscriber
     //======================================================================//
 	public void startMachine(double angle, double armDistance){
 	    if(armDistance < RANGE1){
-			pickUp90(angle, armDistance);
+			pickUp90(angle+0.1, armDistance);
 		}
 		else if (armDistance < RANGE2){
-			pickUpStraight(angle, armDistance);
+			pickUpStraight(angle+0.1, armDistance);
 		}
 		else{
 			System.out.print("Ball out of range at distanc: ");
@@ -157,6 +234,7 @@ public class StateMachine implements LCMSubscriber
         try {
             dynamixel_status_list_t arm_status = new dynamixel_status_list_t(dins);
             /* access positions using arm_status.statuses[i].position_radians */
+            //System.out.println("LCM");
             for (int i = 0; i < 6; i++){
                 actual_angles[i] = arm_status.statuses[i].position_radians;
             }

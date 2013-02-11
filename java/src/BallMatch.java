@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.lang.*;
 import java.awt.event.*;
 
+import lcm.lcm.*;
 import april.jcam.*;
 import april.util.*;
 import april.jmat.*;
@@ -43,7 +44,7 @@ public class BallMatch implements MouseListener
 
     //Error Bar Variables
     double error = 0;
-    double errorK = 100;
+    double errorK = 80;
     int scalefactor = 2;
     int pRange = 20;
 
@@ -82,6 +83,7 @@ public class BallMatch implements MouseListener
     Vector<Location> found = new Vector<Location>();
     Vector<rTheta> located = new Vector<rTheta>();
 
+    StateMachine sm;
 
     public BallMatch(ImageSource _is)
     {
@@ -105,7 +107,8 @@ public class BallMatch implements MouseListener
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jim.addMouseListener(this);
 
-        rd = new RobotDriver();
+        sm = new StateMachine();
+        LCM.getSingleton().subscribe("ARM_STATUS", sm);
     }
 
 
@@ -426,12 +429,6 @@ public class BallMatch implements MouseListener
     }
 
 
-public void pickUp90(double location, double armDistance){
-    }
-
-public void pickUpStraight( double i, double j){}
-
-
 //======================================================================//
 // ballPickUp() //
 // Determins how far a ball is away from the arm. Depending on it's //
@@ -453,15 +450,7 @@ public void pickUpStraight( double i, double j){}
                 rTheta curBall = new rTheta();
                 curBall = located.get(0);
 
-                if(curBall.r < Range1){
-                    pickUp90(curBall.r, curBall.theta);
-                }
-                else if (curBall.r < Range2){
-                    pickUpStraight(curBall.r, curBall.theta);
-                }
-                else{
-                    System.out.println("Ball out of range, why was this put in found!!!!!!!");
-                }
+                sm.startMachine(curBall.theta, curBall.r/10);
 
                 located.remove(0);
             }
@@ -565,7 +554,7 @@ public void pickUpStraight( double i, double j){}
     public static void main(String args[]) throws IOException
     {
         ArrayList<String> urls = ImageSource.getCameraURLs();
-
+        
         String url = null;
 
         if (urls.size()==1)
