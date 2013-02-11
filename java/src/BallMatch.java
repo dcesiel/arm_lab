@@ -25,12 +25,6 @@ public class BallMatch implements MouseListener
     static double L4 = 8.0;
     //This doesn't seem right but I'm just going by the dims
     static double L5 = 18.5; //8 + 2 + 8.5
-    
-    //Bucket range constants
-    static double XMIN = 16.0;
-    static double XMAX = 32.0;
-    static double YMIN = -8.0;
-    static double YMAX = 8.0;
 
     //For sending the robot commands
     RobotDriver rd;
@@ -43,30 +37,30 @@ public class BallMatch implements MouseListener
     //Template creation globals
     boolean clicked, getTemplate, onScreen, setTemplate = true, first = true;
     int X1 = 0, X2 = 1, Y1 = 0, Y2 = 1;
-	int sMaxX, sMinX, sMaxY, sMinY;
-	int edge = 12;
+    int sMaxX, sMinX, sMaxY, sMinY;
+    int edge = 12;
 
 
     //Error Bar Variables
     double error = 0;
-    double errorK = 45;
-    int scalefactor = 4;
-	int pRange = 20;
+    double errorK = 100;
+    int scalefactor = 2;
+    int pRange = 20;
 
     //Calibration Globals
     boolean calibrate = false, notcalibrated = true;
-	boolean cal1 = false, cal2 = false, cal3 = false, cal4 = false;
-	Location CalPt1 = new Location();
-	Location CalPt2 = new Location();
-	Location CalPt3 = new Location();
-	Location CalPt4 = new Location();
-	double bDistance = 24*2.54;
-	Matrix calibration;
+    boolean cal1 = false, cal2 = false, cal3 = false, cal4 = false;
+    Location CalPt1 = new Location();
+    Location CalPt2 = new Location();
+    Location CalPt3 = new Location();
+    Location CalPt4 = new Location();
+    double bDistance = 24*2.54;
+    Matrix calibration;
 
-	//Globals for runing
-	boolean run = false;
-	double Range1 = 21;
-	double Range2 = 37;
+    //Globals for runing
+    boolean run = false;
+    double Range1 = 21;
+    double Range2 = 37;
 
 
     //GUI Gloabals
@@ -77,11 +71,16 @@ public class BallMatch implements MouseListener
 
     //Locations Found
     public static class Location{
-		double x = 0;
-		double y = 0;
+        double x = 0;
+        double y = 0;
+    }
+
+    public static class rTheta{
+        double r;
+        double theta;
     }
     Vector<Location> found = new Vector<Location>();
-	Vector<Location> located = new Vector<Location>();
+    Vector<rTheta> located = new Vector<rTheta>();
 
 
     public BallMatch(ImageSource _is)
@@ -91,9 +90,9 @@ public class BallMatch implements MouseListener
         // Determine which slider values we want
         pg.addDoubleSlider("errork","error Threshold",0,100, errorK);
         pg.addButtons("getTemplateButton", "Grab new template");
-    	pg.addButtons("acceptTemplate", "Accept Template");
+        pg.addButtons("acceptTemplate", "Accept Template");
         pg.addButtons("calibrate", "Calibrate");
-	    pg.addButtons("start", "Start");
+        pg.addButtons("start", "Start");
 
         jim.setFit(true);
 
@@ -110,95 +109,86 @@ public class BallMatch implements MouseListener
     }
 
 
-	public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {}
 
-	public void mouseEntered(MouseEvent e) {
-		onScreen = true;
-	}
+    public void mouseEntered(MouseEvent e) {
+        onScreen = true;
+    }
 
-	public void mouseExited(MouseEvent e) {
-		onScreen = false;
-	}
+    public void mouseExited(MouseEvent e) {
+        onScreen = false;
+    }
 
-	public void mousePressed(MouseEvent me) {
-			System.out.println("I haecoding strove be PRESSED!");
-             if(getTemplate & onScreen & first){
-                X1 = me.getX();
-                Y1 = me.getY();
-                System.out.println("X: " + X1 + " Y: " + Y1);
-                first = false;
-            }
-            else if(getTemplate & onScreen ){
-                X2 = me.getX();
-                Y2 = me.getY();
-                System.out.println("X: " + X2 + " Y: " + Y2);
-                getTemplate = false;
-                template = im;
-                int bounds[] = {X1, Y1, X2, Y2};
-                mark(im, bounds, 0xff0000ff);
-                jim.setImage(im);
-            }
-
-
-			if(calibrate & !cal1 & onScreen ){
-				CalPt1.x = me.getX();
-				CalPt1.y = me.getY();
-				cal1 = true;
-				System.out.println("Calibrating1 X: " + CalPt1.x  + " Y: " + CalPt1.y);
-			}
-			else if(calibrate & onScreen & !cal2){
-				CalPt2.x = me.getX();
-				CalPt2.y = me.getY();
-				cal2 = true;
-				System.out.println("Calibrating2 X: " + CalPt2.x  + " Y: " + CalPt2.y);
-
-			}
-			else if(calibrate & onScreen & !cal3){
-				CalPt3.x = me.getX();
-				CalPt3.y = me.getY();
-				cal3 = true;
-				System.out.println("Calibrating3 X: " + CalPt3.x  + " Y: " + CalPt3.y);
-			}
-			else if(calibrate & onScreen & !cal4){
-				CalPt4.x = me.getX();
-				CalPt4.y = me.getY();
-				cal4 = true;
-				System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
-				calibrate = false;
-				notcalibrated = false;
-				System.out.println("Calibrating4" + notcalibrated);
-			}
-	}
-
-	public void mouseReleased(MouseEvent me) {}
-
-	public void screenOutput(){
-			//Place template in the top left corner of the screeen
-            for (int ty = 0; ty < Y2-Y1; ty++) {
-                for (int tx = 0; tx < X2-X1; tx++) {
-                    im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
-                }
-            }
-            int [] bounds = {0, 0, X2-X1, Y2-Y1};
+    public void mousePressed(MouseEvent me) {
+        if(getTemplate & onScreen & first){
+            X1 = me.getX();
+            Y1 = me.getY();
+            first = false;
+        }
+        else if(getTemplate & onScreen ){
+            X2 = me.getX();
+            Y2 = me.getY();
+            getTemplate = false;
+            template = im;
+            int bounds[] = {X1, Y1, X2, Y2};
             mark(im, bounds, 0xff0000ff);
-
-			//mark calibration points
-			int [] bounds1 = {(int)CalPt1.x - 1, (int)CalPt1.y - 1, (int)CalPt1.x + 1, (int)CalPt1.y + 1};
-			mark(im, bounds1, 0xffff0000);
-
-			int [] bounds2 = {(int)CalPt2.x - 1, (int)CalPt2.y - 1, (int)CalPt2.x + 1, (int)CalPt2.y + 1};
-			mark(im, bounds2, 0xffff0000);
-
-			int [] bounds3 = {(int)CalPt3.x - 1, (int)CalPt3.y - 1, (int)CalPt3.x + 1, (int)CalPt3.y + 1};
-			mark(im, bounds3, 0xffff0000);
-
-			int [] bounds4 = {(int)CalPt4.x - 1, (int)CalPt4.y - 1, (int)CalPt4.x + 1, (int)CalPt4.y + 1};
-			mark(im, bounds4, 0xffff0000);
-
-
-            //display image/
             jim.setImage(im);
-	}
+        }
+
+        if(calibrate & !cal1 & onScreen ){
+            CalPt1.x = me.getX();
+            CalPt1.y = me.getY();
+            cal1 = true;
+        }
+        else if(calibrate & onScreen & !cal2){
+            CalPt2.x = me.getX();
+            CalPt2.y = me.getY();
+            cal2 = true;
+        }
+        else if(calibrate & onScreen & !cal3){
+            CalPt3.x = me.getX();
+            CalPt3.y = me.getY();
+            cal3 = true;
+        }
+        else if(calibrate & onScreen & !cal4){
+            CalPt4.x = me.getX();
+            CalPt4.y = me.getY();
+            cal4 = true;
+            calibrate = false;
+            notcalibrated = false;
+            System.out.println("Calibrating4" + notcalibrated);
+        }
+    }
+
+    public void mouseReleased(MouseEvent me) {}
+
+    public void screenOutput(){
+        //Place template in the top left corner of the screeen
+        for (int ty = 0; ty < Y2-Y1; ty++) {
+            for (int tx = 0; tx < X2-X1; tx++) {
+                im.setRGB(tx, ty, template.getRGB(X1 + tx, Y1 + ty));
+            }
+        }
+        int [] bounds = {0, 0, X2-X1, Y2-Y1};
+        mark(im, bounds, 0xff0000ff);
+
+        //mark calibration points
+        int [] bounds1 = {(int)CalPt1.x - 1, (int)CalPt1.y - 1, (int)CalPt1.x + 1, (int)CalPt1.y + 1};
+        mark(im, bounds1, 0xffff0000);
+
+        int [] bounds2 = {(int)CalPt2.x - 1, (int)CalPt2.y - 1, (int)CalPt2.x + 1, (int)CalPt2.y + 1};
+        mark(im, bounds2, 0xffff0000);
+
+        int [] bounds3 = {(int)CalPt3.x - 1, (int)CalPt3.y - 1, (int)CalPt3.x + 1, (int)CalPt3.y + 1};
+        mark(im, bounds3, 0xffff0000);
+
+        int [] bounds4 = {(int)CalPt4.x - 1, (int)CalPt4.y - 1, (int)CalPt4.x + 1, (int)CalPt4.y + 1};
+        mark(im, bounds4, 0xffff0000);
+
+
+        //display image/
+        jim.setImage(im);
+    }
 
     public void mark(BufferedImage img, int[] bounds, int color){
         // draw the horizontal lines
@@ -220,14 +210,14 @@ public class BallMatch implements MouseListener
     {
         final ImageSourceFormat fmt = is.getCurrentFormat();
 
-    	// read a frame
-		byte buf[] = is.getFrame().data;
+        // read a frame
+        byte buf[] = is.getFrame().data;
             if (buf == null)
                 return;
 
-		im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
+        im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
-		errorK = pg.gd("errork");
+        errorK = pg.gd("errork");
         int tsizeX = X2 - X1;
         int tsizeY = Y2 - Y1;
         error = 0;
@@ -246,7 +236,7 @@ public class BallMatch implements MouseListener
                         int imageGreen = (imageRGB>>8)&0xff;
                         int templateBlue = (templateRGB>>0)&0xff;
                         int imageBlue = (imageRGB>>0)&0xff;
-                        error +=  Math.sqrt(Math.pow(templateRed - imageRed,2) +
+                        error += Math.sqrt(Math.pow(templateRed - imageRed,2) +
                                             Math.pow(templateGreen - imageGreen,2) +
                                             Math.pow(templateBlue - imageBlue,2));
                     }
@@ -256,7 +246,6 @@ public class BallMatch implements MouseListener
                     }
                 }
                 if (error < (errorK * tsizeX * tsizeY)/(2*scalefactor) & nskiped){
-                    System.out.println("Error is " + error + "    K is " + errorK);
                     int [] bounds = {x, y, x + X2 - X1, y + Y2 - Y1};
                     mark(im, bounds, 0xff0000ff);
                     Location loc = new Location();
@@ -269,254 +258,257 @@ public class BallMatch implements MouseListener
             }
         }
 
-		int X = 0, Y = 0, totalX = 0, totalY = 0, count = 0;
-		int compX = 0, compY = 0;
-		int bound[] = new int[4];
-		System.out.println("found " + found.size());
+        int X = 0, Y = 0, totalX = 0, totalY = 0, count = 0;
+        int compX = 0, compY = 0;
+        int bound[] = new int[4];
 
-		while(0 != found.size()){
-			X = (int)found.get(0).x;
-			Y = (int)found.get(0).y;
-			totalX += X;
-			totalY += Y;
-			count++;
-			found.remove(0);
+        while(0 != found.size()){
+            X = (int)found.get(0).x;
+            Y = (int)found.get(0).y;
+            totalX += X;
+            totalY += Y;
+            count++;
+            found.remove(0);
 
-			for(int i = 0; i < found.size(); i++){
-				compX = (int)found.get(i).x;
-				compY = (int)found.get(i).y;
+            for(int i = 0; i < found.size(); i++){
+                compX = (int)found.get(i).x;
+                compY = (int)found.get(i).y;
 
-				if(((compX <= X) & (compX + pRange >= X)) |
-					((compX >= X) & (compX- pRange <= X))){
-					if(((compY <= Y) & (compY + pRange >= Y)) |
-						((compY >= Y) & (compY - pRange <= Y))){
-						totalX += compX;
-						totalY += compY;
-						count++;
-						found.remove(i);
-						i--;
-					}
-				}
-			}
-			Location temp = new Location();
-			temp.x = totalX / count;
-			temp.y = totalY / count;
+                if(((compX <= X) & (compX + pRange >= X)) |
+                    ((compX >= X) & (compX- pRange <= X))){
+                    if(((compY <= Y) & (compY + pRange >= Y)) |
+                        ((compY >= Y) & (compY - pRange <= Y))){
+                        totalX += compX;
+                        totalY += compY;
+                        count++;
+                        found.remove(i);
+                        i--;
+                    }
+                }
+            }
+            Location temp = new Location();
+            Location tempb = new Location();
+            rTheta board = new rTheta();
 
-            if (outsideBucket(temp)){
-			    totalX = 0;
-			    totalY = 0;
-			    count = 0;
+            temp.x = totalX / count;
+            temp.y = totalY / count;
 
-			    bound[0] = (int)temp.x -1;
-			    bound[1] = (int)temp.y -1;
-			    bound[2] = (int)temp.x + 1;
-			    bound[3] = (int)temp.y+1;
-                mark(im, bound, 0xff00ff00);
+            totalX = 0;
+            totalY = 0;
+            count = 0;
 
+            tempb = mapToBoard(temp);
 
-			    //add code to optimize the order of balls that should be retrived
-			    located.add(temp);
-			}
-		}
+            double armDistance = Math.sqrt(Math.pow(tempb.x, 2) + Math.pow(tempb.y, 2));
+
+            if(armDistance < Range2){
+                if(! (tempb.x < 0 & ( tempb.y < 9 & tempb.y > -9))){
+                    bound[0] = (int)temp.x -1;
+                    bound[1] = (int)temp.y -1;
+                    bound[2] = (int)temp.x + 1;
+                    bound[3] = (int)temp.y+1;
+                    mark(im, bound, 0xff00ff00);
+
+                    board.r = armDistance;
+                    board.theta = Math.atan2( tempb.y, tempb.x);
+                    System.out.println("YYY " + board.r + " " + board.theta);
+
+                    located.add(board);
+                }
+            }
+        }
     }
 
 //======================================================================//
-// outsideBucket()                                                      //
-// Returns true outside the range of the bucket                         //
-//======================================================================//    
-    public boolean outsideBucket(Location l){
-        if ((l.x > XMIN) && (l.x < XMAX))
-            return false;
-        if ((l.y > YMIN) && (l.y < YMAX))
-            return false;
-        return true;
-    }
-
+// calibrate() ecoding stro //
+// Uses the affine transform to map the pixels to the cordiates of the //
+// board. Stores solution in calibration. //
 //======================================================================//
-// calibrate()                         ecoding stro                     //
-// Uses the affine transform to map the pixels to the cordiates of the  //
-// board. Stores solution in calibration.                               //
-//======================================================================//
-	public void calibrate(){
+    public void calibrate(){
 
-		//create matrix for the 6 equations need to solve for affine
-		double[][] A = {
-			{CalPt1.x, 	CalPt1.y, 		1, 		0,			0, 			0},
-			{0,			0,				0,		CalPt1.x,	CalPt1.y, 	1},
-			{CalPt2.x, 	CalPt2.y, 		1, 		0,			0, 			0},
-			{0,			0,				0,		CalPt2.x,	CalPt2.y, 	1},
-			{CalPt3.x, 	CalPt3.y, 		1, 		0,			0, 			0},
-			{0,			0,				0,		CalPt3.x,	CalPt3.y, 	1}};
-		Matrix matA = new Matrix(A);
+        //create matrix for the 6 equations need to solve for affine
+        double[][] A = {
+        {CalPt1.x, CalPt1.y, 1, 0,	0, 0},
+        {0,	0,	0,	CalPt1.x,	CalPt1.y, 1},
+        {CalPt2.x, CalPt2.y, 1, 0,	0, 0},
+        {0,	0,	0,	CalPt2.x,	CalPt2.y, 1},
+        {CalPt3.x, CalPt3.y, 1, 0,	0, 0},
+        {0,	0,	0,	CalPt3.x,	CalPt3.y, 1}};
+        Matrix matA = new Matrix(A);
 
-		//Create matrix for the solutions to the 6 equations
-		double[][] B = {
-						{bDistance/2},
-						{bDistance/2},
-						{-bDistance/2},
-						{bDistance/2},
-						{-bDistance/2},
-						{-bDistance/2}};
+        //Create matrix for the solutions to the 6 equations
+        double[][] B = {
+        {-bDistance/2},
+        {-bDistance/2},
+        {bDistance/2},
+        {-bDistance/2},
+        {bDistance/2},
+        {bDistance/2}};
 
-		Matrix matB = new Matrix(B);
+        Matrix matB = new Matrix(B);
 
-        matA.print();
-        matB.print();
-
-		//invert matix A mutiple with B for solution
-		Matrix matAInverse = matA.inverse();
-		Matrix calibrationSolution = matAInverse.times(matB);
+        //invert matix A mutiple with B for solution
+        Matrix matAInverse = matA.inverse();
+        Matrix calibrationSolution = matAInverse.times(matB);
 
         matAInverse.print();
         calibrationSolution.print();
 
-		//make calibration matrix that can be used for mapping pixels
-		double tempCal[][] = new double[6][1];
-		calibrationSolution.copyToArray(tempCal);
+        //make calibration matrix that can be used for mapping pixels
+        double tempCal[][] = new double[6][1];
+        calibrationSolution.copyToArray(tempCal);
 
-		double[][] calibrationArray = {
-			{tempCal[0][0], 	tempCal[1][0], 		tempCal[2][0]},
-			{tempCal[3][0], 	tempCal[4][0], 		tempCal[5][0]},
-			{0,					0,					1			 }};
+        double[][] calibrationArray = {
+        {tempCal[0][0], tempCal[1][0], tempCal[2][0]},
+        {tempCal[3][0], tempCal[4][0], tempCal[5][0]},
+        {0,	0,	1	}};
 
-		calibration = new Matrix(calibrationArray);
+        calibration = new Matrix(calibrationArray);
 
-		//setup the range though which template matching should happen
-		if(CalPt1.x < CalPt4.x){
-			sMinX = (int)CalPt1.x - edge;
-		}
-		else{
-			sMinX = (int)CalPt4.x - edge;
-		}
+        //setup the range though which template matching should happen
+        if(CalPt1.x < CalPt4.x){
+            sMinX = (int)CalPt1.x - edge;
+        }
+        else{
+            sMinX = (int)CalPt4.x - edge;
+        }
 
-		if(CalPt2.x > CalPt3.x){
-			sMaxX = (int)CalPt2.x + edge;
-		}
-		else{
-			sMaxX = (int)CalPt3.x + edge;
-		}
+        if(CalPt2.x > CalPt3.x){
+            sMaxX = (int)CalPt2.x + edge;
+        }
+        else{
+            sMaxX = (int)CalPt3.x + edge;
+        }
 
-		if(CalPt1.y < CalPt2.y){
-			sMinY = (int)CalPt1.y - edge;
-		}
-		else{
-			sMinY = (int)CalPt2.y - edge;
-		}
+        if(CalPt1.y < CalPt2.y){
+            sMinY = (int)CalPt1.y - edge;
+        }
+        else{
+            sMinY = (int)CalPt2.y - edge;
+        }
 
-		if(CalPt3.y > CalPt4.y){
-			sMaxY = (int)CalPt3.y + edge;
-		}
-		else{
-			sMaxY = (int)CalPt4.y + edge;
-		}
-System.out.println("Calibrating4 X: " + CalPt4.x  + " Y: " + CalPt4.y);
-System.out.println("Calibrating1 X: " + CalPt1.x  + " Y: " + CalPt1.y);
-
-System.out.println(sMaxX + " "+ sMinX + " " + sMaxY + " "+ sMinY);
-
-
-
-	}
-
-
-//======================================================================//
-// mapToBoard()                                                         //
-// Mutiple the pixel location by the inverse of the calibration to get  //
-// the ob board location.                                               //
-//======================================================================//
-	public Location mapToBoard(Location pixel){
-
-		double[][]B = {
-						{pixel.x},
-						{pixel.y},
-						{1}};
-		Matrix matB = new Matrix(B);
-
-		//Mutiple A by pixel to get on board location
-		Matrix boardLoc = calibration.times(matB);
-
-		//return location as a Location
-		double temp[][] = new double[3][1];
-		boardLoc.copyToArray(temp);
-
-		Location location = new Location();
-		location.x = temp[0][0];
-		location.y = temp[1][0];
-
-         System.out.println("XXXXXXXXXXXXXXXX " + location.x + " " +  location.y);
-
-		return location;
-	}
-
-	public void pickUp90(Location location, double armDistance){
-        //Do angle calculations (this is explained in the README)
-
-        //These angle calcs can probably be moved up into constants because they'll never change
-        double armSubBase = L4 - L1;
-        double L2Sq = L2 * L2;
-        double L3Sq = L3 * L3;
-
-        double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
-        double MSq = M * M;
-        double ThetaA = Math.asin((armSubBase-M));
-        double ThetaB = Math.asin((armDistance/M));
-
-        double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
-        double L2ToL3 = Math.acos(((L3Sq+L2Sq-MSq)/(2*L2*L3)));
-        double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
-
-        //This is just a test right now will need to create a state machine that uses this
-        rd.update(0.0, BaseToL2, L2ToL3, Wrist);
+        if(CalPt3.y > CalPt4.y){
+            sMaxY = (int)CalPt3.y + edge;
+        }
+        else{
+            sMaxY = (int)CalPt4.y + edge;
+        }
     }
 
-	public void pickUpStraight(Location location){}
+
+//======================================================================//
+// mapToBoard() //
+// Mutiple the pixel location by the inverse of the calibration to get //
+// the ob board location. //
+//======================================================================//
+    public Location mapToBoard(Location pixel){
+
+        double[][]B = {
+                {pixel.x},
+                {pixel.y},
+                {1}};
+                Matrix matB = new Matrix(B);
+
+        //Mutiple A by pixel to get on board location
+        Matrix boardLoc = calibration.times(matB);
+
+        //return location as a Location
+        double temp[][] = new double[3][1];
+        boardLoc.copyToArray(temp);
+
+        Location location = new Location();
+        location.x = temp[0][0];
+        location.y = temp[1][0];
+
+        System.out.println("XXXXXXXXXXXXXXXX " + location.x + " " + location.y);
+
+        return location;
+    }
+
+
+public void pickUp90(double location, double armDistance){
+    }
+
+public void pickUpStraight( double i, double j){}
 
 
 //======================================================================//
-// ballPickUp()                                                         //
-// Determins how far a ball is away from the arm. Depending on it's     //
-// different pick functions are called.                                 //
+// ballPickUp() //
+// Determins how far a ball is away from the arm. Depending on it's //
+// different pick functions are called. //
 //======================================================================//
-	public void ballPickUp(){
+    public void ballPickUp(){
 
-		while( ! located.isEmpty()){
-			Location curBall = new Location();
-			curBall = located.get(0);
+        while(true){
+            matchBall();
 
-			curBall = mapToBoard(curBall);
+            screenOutput();
 
-            System.out.println("XXXXXXXXXXXXXXXX " + curBall.x + " " +  curBall.y);
+            if( located.isEmpty()){
+                System.out.println("No more balls found!");
+                run = false;
+                return;
+            }
+            while( ! located.isEmpty()){
+                rTheta curBall = new rTheta();
+                curBall = located.get(0);
 
-			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2));
+                if(curBall.r < Range1){
+                    pickUp90(curBall.r, curBall.theta);
+                }
+                else if (curBall.r < Range2){
+                    pickUpStraight(curBall.r, curBall.theta);
+                }
+                else{
+                    System.out.println("Ball out of range, why was this put in found!!!!!!!");
+                }
 
-			if(armDistance < Range1){
-				pickUp90(curBall, armDistance);
-			}
-			else if (armDistance < Range2){
-				pickUpStraight(curBall);
-			}
-			else{
-				System.out.println("Ball out of range, why was this put in found!!!!!!!");
-			}
+                located.remove(0);
+            }
+        }
+    }
 
-			located.remove(0);
-		}
-	}
+//======================================================================//
+// end()                                                                //
+//                                                                      //
+// Shows that the program is done by making the template soild red      //
+//======================================================================//
+    public void end(){
+
+        final ImageSourceFormat fmt = is.getCurrentFormat();
+
+        // read a frame
+        byte buf[] = is.getFrame().data;
+            if (buf == null)
+                return;
+
+        im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
+
+        for (int x = 0; x < X2-X1; x++) {
+            for (int y = 0; y <=Y2-Y1; y++) {
+                im.setRGB(x,y, 0xffff0000); //Go Blue!
+            }
+        }
+        jim.setImage(im);
+    }
+
+
 
 
 //======================================================================//
 // run()                                                                //
+//                                                                      //
 // Gets template, calibrates and maps pixels to board.                  //
 // Upon start being pressed begins template matching and picking up     //
 // balls. After all balls that can be picked up have been picked up     //
-// ends operatation.
+// ends operatation.                                                    //
 //======================================================================//
     public void run(){
         is.start();
-		final ImageSourceFormat fmt = is.getCurrentFormat();
+        final ImageSourceFormat fmt = is.getCurrentFormat();
 
         // Initialize visualization environment now that we know
-		// the image dimensions
+        // the image dimensions
         pg.addListener(new ParameterListener() {
             public void parameterChanged(ParameterGUI pg, String name)
             {
@@ -546,41 +538,38 @@ System.out.println(sMaxX + " "+ sMinX + " " + sMaxY + " "+ sMinY);
         });
 
 
-		//Waiting for Template
-		System.out.println("Waiting to Template.");
+        //Waiting for Template
+        System.out.println("Waiting to Template.");
         while(setTemplate){System.out.println(setTemplate);}
 
 
-		//Waiting for Calibration
-		System.out.println("Waiting to Calibrating");
-		while(notcalibrated){System.out.print(".");}
+        //Waiting for Calibration
+        System.out.println("Waiting to Calibrating");
+        while(notcalibrated){System.out.print(".");}
 
-		//Maps pixel locations to the board
-		calibrate();
+        //Maps pixel locations to the board
+        calibrate();
 
-		//Waiting to Start
-		System.out.println("Waiting to Start");
-		while(!run){System.out.println("SART" + run);}
+        //Waiting to Start
+        System.out.println("Waiting to Start");
+        while(!run){System.out.println("SART" + run);}
 
-		//Begin template matching and picking up balls
+        //Begin picking up balls
         while(run) {
-
-            matchBall();
-
-			screenOutput();
-
-			ballPickUp();
+            ballPickUp();
         }
+
+        end();
     }
 
     public static void main(String args[]) throws IOException
     {
         ArrayList<String> urls = ImageSource.getCameraURLs();
 
-		String url = null;
+        String url = null;
 
         if (urls.size()==1)
-        	url = urls.get(0);
+         url = urls.get(0);
 
         if (args.length > 0)
             url = args[0];
@@ -588,8 +577,8 @@ System.out.println(sMaxX + " "+ sMinX + " " + sMaxY + " "+ sMinY);
         if (url == null) {
            System.out.printf("Cameras found:\n");
            for (String u : urls)
-               System.out.printf("  %s\n", u);
-        	   System.out.printf("Please specify one on the command line.\n");
+               System.out.printf(" %s\n", u);
+         System.out.printf("Please specify one on the command line.\n");
                return;
         }
 
