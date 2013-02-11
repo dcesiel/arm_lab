@@ -215,11 +215,15 @@ public class BallMatch implements MouseListener
     {
         final ImageSourceFormat fmt = is.getCurrentFormat();
 
+        is.start();
+        
         // read a frame
         byte buf[] = is.getFrame().data;
             if (buf == null)
                 return;
 
+        is.stop();
+        
         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
         errorK = pg.gd("errork");
@@ -323,7 +327,7 @@ public class BallMatch implements MouseListener
                     board.r = armDistance;
                     board.theta = Math.atan2( tempb.y, tempb.x);
                     System.out.println("YYY " + board.r + " " + board.theta);
-
+     
                     located.add(board);
                 }
             }
@@ -445,11 +449,15 @@ public class BallMatch implements MouseListener
     public void ballPickUp(){
 
         while(true){
-
-            for(int i =0; i < 6; i++){
+        
+            is.start();
+            
+            for(int i = 0; i < 10; i++){
                 byte buf[] = is.getFrame().data;
             }
-
+            
+            is.stop();
+            System.out.println("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP");
             matchBall();
 
             screenOutput();
@@ -462,11 +470,14 @@ public class BallMatch implements MouseListener
             while( ! located.isEmpty()){
                 rTheta curBall = new rTheta();
                 curBall = located.get(0);
-
+                System.out.println("XXXXXXX" + located.size());
                 sm.startMachine(-curBall.theta, curBall.r/10);
-
+                
                 located.remove(0);
-            }
+                if(!located.isEmpty()){
+                    located.remove(located.size()-1);
+                }
+            }         
         }
     }
 
@@ -479,10 +490,13 @@ public class BallMatch implements MouseListener
 
         final ImageSourceFormat fmt = is.getCurrentFormat();
 
-        // read a frame
+       is.start();
+       
         byte buf[] = is.getFrame().data;
             if (buf == null)
                 return;
+                
+        is.stop();
 
         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
 
@@ -518,7 +532,11 @@ public class BallMatch implements MouseListener
                     first = true;
                     getTemplate = true;
                     // read a frame
+                    is.start();
+                    
                     byte buf[] = is.getFrame().data;
+                    
+                    is.stop();
                     if (buf != null){
                         im = ImageConvert.convertToImage(fmt.format, fmt.width, fmt.height, buf);
                         jim.setImage(im);
