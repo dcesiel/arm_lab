@@ -21,7 +21,7 @@ import april.*;
 //======================================================================//
 public class StateMachine implements LCMSubscriber
 {
-    
+
     static double withinConstant = 0.05;
 
     //Arm Length Constants
@@ -31,14 +31,14 @@ public class StateMachine implements LCMSubscriber
     //static double L4 = 8.0;
     //This doesn't seem right but I'm just going by the dims
     static double L4 = 1.95; //8 + 2 + 8.5 + height of claw above the board
-    
+
     //Gripper Constants
     static double GRIPPER_OPEN = 1.047;
     static double GRIPPER_CLOSED = 1.57;
-    
+
     static double RANGE1 = 1.9;
 	static double RANGE2 = 3.9;
-	
+
 	//Swing position constants
 	static double BASESWING = 0.0;
 	static double L2TOL3SWING = -1.2;
@@ -68,14 +68,14 @@ public class StateMachine implements LCMSubscriber
         angles[1] = BaseToL2;
         angles[2] = L2ToL3;
         angles[3] = Wrist;
-        
+
         send.send(angles);
         waitUntilAngle(angle, 0);
         waitUntilAngle(BaseToL2, 1);
         waitUntilAngle(L2ToL3, 2);
         waitUntilAngle(Wrist, 3);
     }
-    
+
     protected void swingArm(double angle){
         angles[0] = angle;
         send.send(angles);
@@ -83,7 +83,7 @@ public class StateMachine implements LCMSubscriber
         waitUntilAngle(angle, 0);
         System.out.println("Swing asdfasdfd");
     }
-    
+
     protected void armDown(double Wrist){
         angles[1] = BASESWING;
         angles[2] = L2TOL3SWING;
@@ -98,10 +98,10 @@ public class StateMachine implements LCMSubscriber
         waitUntilAngle(Wrist, 3);
         System.out.println("Third while executed");
     }
-    
+
     public void waitUntilAngle(double angle, int index){
         while (!((actual_angles[index] < angle+withinConstant) && (actual_angles[index] > angle-withinConstant))) {
-            
+
             //System.out.println(actual_angles[index]);
         }
     }
@@ -117,35 +117,35 @@ public class StateMachine implements LCMSubscriber
         send.send(angles);
         waitUntilAngle(GRIPPER_CLOSED, 5);
     }
-    
+
     protected void armUpStr() {
-        angles[2] += .5; //1.5
+        angles[1] += .5; //1.5
+        send.send(angles);
+        waitUntilAngle(angles[1], 1);
+    }
+
+    protected void armUp90() {
+        angles[2] += .5;
         send.send(angles);
         waitUntilAngle(angles[2], 2);
     }
-    
-    protected void armUp90() {
-        angles[3] += .5;
-        send.send(angles);
-        waitUntilAngle(angles[3], 3);
-    }
-    
+
     protected void returnBallStr(double swing){
         armUpStr();
-        
+
         swingArm(3.14);
-            
+
         openGripper();
     }
-    
+
     protected void returnBall90(double swing){
         armUp90();
-        
+
         swingArm(3.14);
-            
+
         openGripper();
     }
-    
+
     public void stop(){
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
@@ -173,17 +173,18 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo2);
         System.out.println(servo3);
         System.out.println(servo4);
-        
+
         openGripper();
-        armDown(-servo4);
-      
+
         swingArm(angle-.2);
+        armDown(-servo4);
+
         loadAngles(angles[0], -servo2, -servo3, -servo4);
-        
+
         closeGripper();
-        
-        returnBall90(angle); 
-        
+
+        returnBall90(angle);
+
     }
 
     public void pickUpStraight(double angle, double armDistance){
@@ -193,7 +194,7 @@ public class StateMachine implements LCMSubscriber
 	    double L2L3Sq = (L2+L3)*(L2+L3);
         double Theta2 = Math.acos(((L2L3Sq)-(L4*L4)+MSq)/(2*(L2+L3)*M));
         double Theta3 = Math.asin((armDistance/M));
-	
+
 	    System.out.println("L2: " + L2);
 	    System.out.println("L3: " + L3);
 	    System.out.println("M: " + M);
@@ -209,15 +210,16 @@ public class StateMachine implements LCMSubscriber
         System.out.println(servo2);
         System.out.println(servo3);
         System.out.println(servo4);
-        
+
         openGripper();
-        armDown(-servo4);
-        
+
         swingArm(angle - 0.2);
-        loadAngles(angles[0], -servo2 + .13, -servo3, -servo4);
-        
+        armDown(-servo4);
+
+        loadAngles(angles[0], -servo2 + .05, -servo3, -servo4);
+
         closeGripper();
-        
+
         returnBallStr(angle);
 
     }

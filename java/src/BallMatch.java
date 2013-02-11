@@ -463,7 +463,7 @@ public class BallMatch implements MouseListener
                 rTheta curBall = new rTheta();
                 curBall = located.get(0);
 
-                sm.startMachine(curBall.theta, curBall.r/10);
+                sm.startMachine(-curBall.theta, curBall.r/10);
 
                 located.remove(0);
             }
