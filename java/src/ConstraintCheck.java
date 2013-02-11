@@ -17,9 +17,9 @@ public class ConstraintCheck
     LCMSend lcm = new LCMSend();
 
     public ConstraintCheck(){
-	    angles_old[0] = 0;
-	    angles_old[1] = 0;
-	    angles_old[2] = 0;
+	angles_old[0] = 0;
+	angles_old[1] = 0;
+	angles_old[2] = 0;
         angles_old[3] = 0;
         angles_old[4] = 0;
        	angles_old[5] = 0;
@@ -53,9 +53,11 @@ public class ConstraintCheck
 				    LinAlg.rotateZ(-(angles[0])-1.5707963267948966192313216916397514420985846996875529),
 				    LinAlg.translate(0.0,0.0,0.45)
 				    );
+	System.out.println("After seg1:" + curXYZ[2][3]);
 	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 		    angles[0] = angles_old[0];
+		    System.out.println("Servo 1 Constrained");
 	    }
 
 	    //Update matrix to offset by seg2
@@ -63,10 +65,12 @@ public class ConstraintCheck
 					    LinAlg.rotateX(-(angles[1])),
 					    LinAlg.translate(0.0,0.0,1.05)
 			         	    );
+	System.out.println("After seg2:" + curXYZ[2][3]);
 	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 		    angles[0] = angles_old[0];
 		    angles[1] = angles_old[1];
+		    System.out.println("Servo 2 Constrained");
 	    }
 
 	    //Update matrix to offset by seg3
@@ -74,11 +78,13 @@ public class ConstraintCheck
 					    LinAlg.rotateX(-(angles[2])),
 					    LinAlg.translate(0.0,0.0,1.0)
 			         	    );
+	System.out.println("After seg3:" + curXYZ[2][3]);
 	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 		    angles[0] = angles_old[0];
 		    angles[1] = angles_old[1];
 		    angles[2] = angles_old[2];
+		System.out.println("Servo 3 Constrained");
 	    }
 
 	    //Update matrix to offset by seg4
@@ -86,12 +92,14 @@ public class ConstraintCheck
 					    LinAlg.rotateX(-(angles[3])),
 					    LinAlg.translate(0.0,0.0,0.8)
 			         	    );
+	System.out.println("After seg4:" + curXYZ[2][3]);
 	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 		    angles[0] = angles_old[0];
 		    angles[1] = angles_old[1];
 		    angles[2] = angles_old[2];
 		    angles[3] = angles_old[3];
+	            System.out.println("Servo 4 Constrained");
 	    }
 
 	    //Update matrix to offset by seg5
@@ -99,6 +107,7 @@ public class ConstraintCheck
 					    LinAlg.rotateZ(-(angles[4])),
 					    LinAlg.translate(0.0,0.0,0.2)
 			         	    );
+	System.out.println("After seg5:" + curXYZ[2][3]);
 	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 	    }
@@ -107,13 +116,15 @@ public class ConstraintCheck
 	    curXYZ = LinAlg.multiplyMany(	curXYZ,
 					    LinAlg.translate(0.0,0.0,0.85)
 			         	    );
-	    if(curXYZ[2][3] < 0.25){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
+	System.out.println("After gripper:" + curXYZ[2][3]);
+	    if(curXYZ[2][3] < 0.05){ //Checks to see if the bot can move there, if it can't reset the prior joints to how they were
 		    isCrashed = true;
 		    angles[0] = angles_old[0];
 		    angles[1] = angles_old[1];
 		    angles[2] = angles_old[2];
 		    angles[3] = angles_old[3];
 		    angles[4] = angles_old[4];
+		    System.out.println("Servo 5 Constrained");
 	    }
 
 	    //Update matrix to offset by three prong gripper
@@ -131,12 +142,21 @@ public class ConstraintCheck
 		    angles[3] = angles_old[3];
 		    angles[4] = angles_old[4];
 		    angles[5] = angles_old[5];
+		    System.out.println("Servo 6 Constrained");
+		
 	    }
 	
+	    angles[2] = -angles[2];	
+
+	    for(int i = 0; i < 6; i ++){
+		angles_old[i] = angles[i];
+	    }
+
 	    System.out.println("Angles after constraining");
 	    for (int i = 0; i < 6; i++){
 	        System.out.println(angles[i]);
 	    }
+	
 	    lcm.send(angles);
 
 	    return angles;

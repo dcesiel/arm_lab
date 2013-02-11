@@ -23,16 +23,19 @@ public class StateMachine implements LCMSubscriber
 {
 
     //Arm Length Constants
-    static double L1 = 12; //7.5cm + 4.5cm for Base + Pivot1
-    static double L2 = 10.5;
-    static double L3 = 10.0;
-    static double L4 = 8.0;
+    static double L1 = 1.2; //7.5cm + 4.5cm for Base + Pivot1
+    static double L2 = 1.05;
+    static double L3 = 1.0;
+    //static double L4 = 8.0;
     //This doesn't seem right but I'm just going by the dims
-    static double L5 = 19.5; //8 + 2 + 8.5 + height of claw above the board
-
+    static double L4 = 1.95; //8 + 2 + 8.5 + height of claw above the board
+    
     //Gripper Constants
-    static double GRIPPER_OPEN = -30.0;
-    static double GRIPPER_CLOSED = 0.0;
+    static double GRIPPER_OPEN = 1.047;
+    static double GRIPPER_CLOSED = 1.57;
+    
+    static double RANGE1 = 21;
+	static double RANGE2 = 37;
 
     double armSubBase;
     double L2Sq;
@@ -44,12 +47,14 @@ public class StateMachine implements LCMSubscriber
 
     public StateMachine()
     {
-        double armSubBase = L4 - L1;
-        double L2Sq = L2 * L2;
-        double L3Sq = L3 * L3;
+        armSubBase = L4 - L1;
+        L2Sq = L2 * L2;
+        L3Sq = L3 * L3;
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
         }
+        //Put the arm in the up position
+        //cc.check(angles);
     }
 
     protected void loadAngles(double angle, double BaseToL2, double L2ToL3, double Wrist){
@@ -70,63 +75,79 @@ public class StateMachine implements LCMSubscriber
     }
 
     public void pickUp90(double angle, double armDistance){
-        //Do angle calculations (this is explained in the README)
-
-        //These angle calcs can probably be moved up into constants because they'll never change
-
         double M = Math.sqrt((armDistance*armDistance)+(armSubBase*armSubBase));
+	    System.out.println("M " + M);	
         double MSq = M * M;
+	    System.out.println("SubBase " + armSubBase);
+	    System.out.println("M^2 " + MSq);
         double ThetaA = Math.asin((armSubBase/M));
+	    System.out.println("ThetaA " + ThetaA);
         double ThetaB = Math.asin((armDistance/M));
+	    System.out.println("ThetaB " + ThetaB);
 
         double BaseToL2 = Math.acos(((L2Sq+MSq-L3Sq)/(2*L2*M)));
-        double servo2 = 1.5707963267948966192313216916397514420985846996875529 - (BaseToL2 + ThetaA);
+        double servo2 = 1.57 - (BaseToL2 + ThetaA);
         double L2ToL3 = Math.acos(((L3Sq+L2Sq-MSq)/(2*L2*L3)));
-        double servo3 = ((2*1.5707963267948966192313216916397514420985846996875529) - L2ToL3);
-        double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M))) + ThetaB;
-        double servo4 = ((2*1.5707963267948966192313216916397514420985846996875529) - (Wrist + ThetaB));
+        double servo3 = ((2*1.57) - L2ToL3);
+        double Wrist = Math.acos(((L3Sq+MSq-L2Sq)/(2*L3*M)));
+        double servo4 = ((2*1.57) - (Wrist + ThetaB));
 
         //This is just a test right now will need to create a state machine that uses this
         System.out.println("Angles before contraining:");
         System.out.println(servo2);
         System.out.println(servo3);
         System.out.println(servo4);
-        loadAngles(angle, servo2, servo3, servo4);
+        loadAngles(angle, -servo2, servo3, -servo4);
         openGripper();
         cc.check(angles);
     }
 
-    public void pickUpStraight(double angles){}
+    public void pickUpStraight(double angle, double armDistance){
+        double M = Math.sqrt((armDistance*armDistance)+(L1*L1));
+        double MSq = M * M;
+	    double L2L3Sq = (L2+L3)*(L2+L3);
+        double Theta2 = Math.acos(((L2L3Sq)-(L4*L4)+MSq)/(2*(L2+L3)*M));
+        double Theta3 = Math.asin((armDistance/M));
+	
+	    System.out.println("L2: " + L2);
+	    System.out.println("L3: " + L3);
+	    System.out.println("M: " + M);
+	    System.out.println("Theta2: " + Theta2);
+	    System.out.println("Theta3: " + Theta3);
+
+        double servo2 = ((2*1.57) - (Theta2 + Theta3));
+        double servo3 = 0;
+        double Theta4 = Math.acos(((L2L3Sq)+(L4*L4)-MSq)/(2*(L2+L3)*L4));
+        double servo4 = (2*1.57)-Theta4;
+        //This is just a test right now will need to create a state machine that uses this
+        System.out.println("Angles before contraining:");
+        System.out.println(servo2);
+        System.out.println(servo3);
+        System.out.println(servo4);
+        loadAngles(angle, -servo2, servo3, -servo4);
+        openGripper();
+        cc.check(angles);
+    }
 
     //======================================================================//
     // ballPickUp()                                                         //
     // Determins how far a ball is away from the arm. Depending on it's     //
     // different pick functions are called.                                 //
     //======================================================================//
-	public void ballPickUp(){
-
-		/*while( ! located.isEmpty()){
-			Location curBall = new Location();
-			curBall = located.get(0);
-
-			curBall = mapToBoard(curBall);
-
-            System.out.println("XXXXXXXXXXXXXXXX " + curBall.x + " " +  curBall.y);
-
-			double armDistance = Math.sqrt(Math.pow(curBall.x, 2) + Math.pow(curBall.y, 2));
-
-			if(armDistance < Range1){
-				pickUp90(curBall, armDistance);
-			}
-			else if (armDistance < Range2){
-				pickUpStraight(curBall);
-			}
-			else{
-				System.out.println("Ball out of range, why was this put in found!!!!!!!");
-			}
-
-			located.remove(0);
-		}*/
+	public void startMachine(double angle, double armDistance){
+	    if(armDistance < RANGE1){
+			pickUp90(angle, armDistance);
+		}
+		else if (armDistance < RANGE2){
+			pickUpStraight(angle, armDistance);
+		}
+		else{
+			System.out.print("Ball out of range at distanc: ");
+			System.out.print(armDistance);
+			System.out.print(" Angle: ");
+			System.out.print(angle);
+		}
+		while (true){}
 	}
 
 
