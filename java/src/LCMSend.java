@@ -32,7 +32,7 @@ public class LCMSend
             dynamixel_command_t cmd = new dynamixel_command_t();
             cmd.position_radians = MathUtil.mod2pi(angles[i]);
             cmd.utime = now;
-            cmd.speed = .2;
+            cmd.speed = 0.8;
             cmd.max_torque = 0.6;
             cmdlist.commands[i] = cmd;
         }

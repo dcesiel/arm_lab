@@ -33,7 +33,7 @@ public class StateMachine implements LCMSubscriber
     static double L4 = 1.95; //8 + 2 + 8.5 + height of claw above the board
 
     //Gripper Constants
-    static double GRIPPER_OPEN = 1.047;
+    static double GRIPPER_OPEN = 1.2;
     static double GRIPPER_CLOSED = 1.57;
 
     static double RANGE1 = 1.9;
@@ -60,6 +60,7 @@ public class StateMachine implements LCMSubscriber
         for (int i = 0; i < 6; i++){
             angles[i] = 0;
         }
+        angles[5] = GRIPPER_CLOSED;
         send.send(angles);
     }
 
@@ -84,25 +85,10 @@ public class StateMachine implements LCMSubscriber
         System.out.println("Swing asdfasdfd");
     }
 
-    protected void armDown(double Wrist){
-        angles[1] = BASESWING;
-        angles[2] = L2TOL3SWING;
-        angles[3] = Wrist;
-        //cc.check(angles);
-        send.send(angles);
-        System.out.println("Angles sent");
-        waitUntilAngle(BASESWING, 1);
-        System.out.println("First while executed");
-        waitUntilAngle(L2TOL3SWING, 2);
-        System.out.println("Second while executed");
-        waitUntilAngle(Wrist, 3);
-        System.out.println("Third while executed");
-    }
-
     public void waitUntilAngle(double angle, int index){
         while (!((actual_angles[index] < angle+withinConstant) && (actual_angles[index] > angle-withinConstant))) {
 
-            //System.out.println(actual_angles[index]);
+            System.out.println(actual_angles[index]);
         }
     }
 
@@ -119,15 +105,31 @@ public class StateMachine implements LCMSubscriber
     }
 
     protected void armUpStr() {
-        angles[1] += .5; //1.5
+        angles[1] = 0;
         send.send(angles);
         waitUntilAngle(angles[1], 1);
+        
+        angles[2] = -1.54;
+        send.send(angles);
+        waitUntilAngle(angles[2], 2);
+        
+        angles[3] = -.75;
+        send.send(angles);
+        waitUntilAngle(angles[3], 3);
     }
 
     protected void armUp90() {
-        angles[2] += .5;
+        angles[1] = 0;
+        send.send(angles);
+        waitUntilAngle(angles[1], 1);
+        
+        angles[2] = -1.54;
         send.send(angles);
         waitUntilAngle(angles[2], 2);
+        
+        angles[3] = -.75;
+        send.send(angles);
+        waitUntilAngle(angles[3], 3);
     }
 
     protected void returnBallStr(double swing){
@@ -177,7 +179,6 @@ public class StateMachine implements LCMSubscriber
         openGripper();
 
         swingArm(angle-.2);
-        armDown(-servo4);
 
         loadAngles(angles[0], -servo2, -servo3, -servo4);
 
@@ -214,7 +215,6 @@ public class StateMachine implements LCMSubscriber
         openGripper();
 
         swingArm(angle - 0.2);
-        armDown(-servo4);
 
         loadAngles(angles[0], -servo2 + .05, -servo3, -servo4);
 
@@ -237,7 +237,7 @@ public class StateMachine implements LCMSubscriber
 			pickUp90(angle+0.1, armDistance);
 		}
 		else if (armDistance < RANGE2){
-			pickUpStraight(angle+0.1, armDistance);
+			pickUpStraight(angle+0.1, armDistance+0.15);
 		}
 		else{
 			System.out.print("Ball out of range at distanc: ");
